@@ -1,6 +1,6 @@
 # ⚽ Pronostici Serie B & C
 
-Applicazione Python/Flask per pronostici statistici sulle partite di **Serie B** e **Serie C** (Gironi A, B, C) del campionato italiano 2025-2026. Utilizza il modello di distribuzione di **Poisson** per calcolare le probabilità di esiti specifici sulle prossime partite da giocare.
+Applicazione Python/Flask per pronostici statistici sulle partite di **Serie B** e **Serie C** (Gironi A, B, C) del campionato italiano 2025-2026. Utilizza un modello **Dixon-Coles** con decadimento temporale e fattore campo per calcolare le probabilità di esiti specifici sulle prossime partite da giocare.
 
 ---
 
@@ -17,33 +17,56 @@ Le partite vengono ordinate per probabilità decrescente, permettendo di individ
 
 ## 🧮 Il modello Poisson
 
-Il cuore dell'applicazione è la [distribuzione di Poisson](https://it.wikipedia.org/wiki/Distribuzione_di_Poisson), un modello statistico classico per eventi rari e indipendenti, ampiamente usato nell'analisi calcistica.
+Il cuore dell'applicazione è la [distribuzione di Poisson](https://it.wikipedia.org/wiki/Distribuzione_di_Poisson), estesa con tre miglioramenti che si sovrappongono come strati successivi.
 
-### Come funziona
+### Strato base: calcolo di λ
 
-Per ogni partita futura, l'app calcola un parametro **λ (lambda)** che rappresenta il numero atteso di gol. Il calcolo si basa su:
+Per ogni partita futura, l'app calcola due parametri **λ_casa** e **λ_ospite** che rappresentano i gol attesi per ciascuna squadra:
 
-**Serie B — Casa Over 0.5:**
 ```
-λ = (Attacco_Casa × Difesa_Ospite) / Media_Lega
-
-dove:
-  Attacco_Casa   = media gol fatti in casa dalla squadra di casa
-  Difesa_Ospite  = media gol subiti in trasferta dalla squadra ospite
-  Media_Lega     = media gol per partita dell'intero campionato
-
-P(Casa Over 0.5) = 1 − P(X = 0) = 1 − e^(−λ)
+λ_casa   = (Attacco_Casa × Difesa_Ospite) / Media_Lega
+λ_ospite = (Attacco_Ospite × Difesa_Casa) / Media_Lega
 ```
 
-**Serie C — Ospite Under 1.5:**
+### Strato 1: Decadimento temporale
+
+Le medie di attacco e difesa **non** trattano tutte le partite allo stesso modo. Ogni partita riceve un peso esponenziale decrescente:
+
 ```
-λ = (Attacco_Ospite × Difesa_Casa) / Media_Lega
+peso = e^(−ξ × giorni_fa)     dove ξ = 0.005 (emivita ~139 giorni)
+```
 
-dove:
-  Attacco_Ospite = media gol fatti in trasferta dalla squadra ospite
-  Difesa_Casa    = media gol subiti in casa dalla squadra di casa
+Una partita di 30 giorni fa pesa ~86%, una di 6 mesi fa pesa ~41%. Questo cattura il "momento di forma" senza scartare il passato.
 
-P(Ospite Under 1.5) = P(X = 0) + P(X = 1) = e^(−λ) + λ·e^(−λ)
+### Strato 2: Fattore campo per squadra
+
+Ogni squadra ha un coefficiente **HF** (Home Factor) che misura quanto il proprio stadio amplifica o riduce le prestazioni rispetto alla media della lega:
+
+```
+HF = 0.7 × (rapporto_casa/trasferta_squadra / rapporto_casa/trasferta_lega) + 0.3
+
+λ_casa   = λ_casa_base × HF
+λ_ospite = λ_ospite_base / HF
+```
+
+Il fattore 0.3 è uno _shrinkage_ che tira il coefficiente verso 1.0 per evitare estremi con pochi dati. Un Mantova (HF=1.51) in casa è molto più pericoloso di uno Spezia (HF=0.71).
+
+### Strato 3: Correzione Dixon-Coles
+
+Il Poisson standard assume che i gol delle due squadre siano indipendenti, ma nel calcio reale i risultati a basso punteggio (0-0, 1-1) sono più frequenti del previsto. La correzione [Dixon-Coles (1997)](https://doi.org/10.1111/1467-9876.00065) introduce un parametro **ρ** che modifica le probabilità congiunte:
+
+```
+P(0-0) → P(0-0) × (1 − λ_h × λ_a × ρ)
+P(0-1) → P(0-1) × (1 + λ_h × ρ)
+P(1-0) → P(1-0) × (1 + λ_a × ρ)
+P(1-1) → P(1-1) × (1 − ρ)
+```
+
+Il parametro ρ viene stimato automaticamente dai dati confrontando la frequenza osservata vs attesa dei risultati bassi (valori tipici: da −0.25 a +0.05). Le probabilità finali vengono calcolate dalla matrice congiunta completa (9×9 gol) anziché dal Poisson univariato:
+
+```
+P(Casa Over 0.5) = 1 − Σⱼ P(casa=0, ospite=j)
+P(Ospite Under 1.5) = Σᵢ [P(casa=i, ospite=0) + P(casa=i, ospite=1)]
 ```
 
 ### Range statistici
@@ -184,7 +207,7 @@ L'interfaccia web è una **Single Page Application** integrata direttamente nel 
 ### Tab Pronostici
 - **Serie B — Casa Over 0.5**: card per ogni partita della prossima giornata, ordinate per probabilità
 - **Serie C — Ospite Under 1.5**: card per tutti e 3 i gironi, ordinate per probabilità globale
-- Ogni card mostra: probabilità %, barra visuale colorata (verde/giallo/rosso), λ, rating attacco/difesa, numero partite giocate, data
+- Ogni card mostra: probabilità %, barra visuale colorata (verde/giallo/rosso), λ casa e ospite, rating attacco/difesa, fattore campo (HF), parametro ρ Dixon-Coles, data
 
 ### Tab Classifiche
 - Classifica completa Serie B
@@ -256,9 +279,9 @@ Entrambe le versioni supportano la **migrazione automatica** dal vecchio formato
 ## ⚠️ Note e limitazioni
 
 - **Nessuna quota bookmaker**: l'app calcola solo probabilità statistiche pure, senza incorporare le quote dei siti di scommesse. Le probabilità non tengono conto del margine del bookmaker.
-- **Modello semplificato**: il Poisson assume indipendenza tra i gol e non considera fattori come infortuni, squalifiche, motivazione, condizioni meteo.
+- **Senza variabili esterne**: il modello non considera fattori come infortuni, squalifiche, motivazione o condizioni meteo. Ulteriori miglioramenti potrebbero includere xG (Expected Goals), regressione Poisson multivariata o modelli bayesiani gerarchici.
 - **Dipendenza dalla struttura HTML**: lo scraping può rompersi se i siti fonte cambiano layout. In tal caso, usare l'altra versione come fallback.
-- **SSL**: entrambe le versioni usano `verify=False` nelle richieste HTTPS per aggirare problemi di certificati su alcuni sistemi. Non è ideale per la sicurezza, ma funzionale per lo scraping.
+- **SSL**: entrambe le versioni usano `verify=False` nelle richieste HTTPS per aggirare problemi di certificati su alcuni sistemi.
 - **Solo stagione corrente**: gli URL sono codificati per la stagione 2025-2026 e andranno aggiornati manualmente per le stagioni successive.
 
 ---

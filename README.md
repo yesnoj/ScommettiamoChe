@@ -1,258 +1,268 @@
 # ⚽ Pronostici Serie B & C
 
-Applicazione desktop/web per generare pronostici statistici sulle partite di **Serie B** e **Serie C** del campionato italiano di calcio, basata sulla distribuzione di Poisson.
-
-I dati vengono scaricati automaticamente da [calciomagazine.net](https://www.calciomagazine.net).
-
-![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-3.x-lightgrey?logo=flask)
-![License](https://img.shields.io/badge/License-MIT-green)
+Applicazione Python/Flask per pronostici statistici sulle partite di **Serie B** e **Serie C** (Gironi A, B, C) del campionato italiano 2025-2026. Utilizza il modello di distribuzione di **Poisson** per calcolare le probabilità di esiti specifici sulle prossime partite da giocare.
 
 ---
 
-## Funzionalità
+## 📊 Cosa calcola
 
-- **Pronostici automatici** per le prossime partite con probabilità calcolate via modello di Poisson
-- **Scraping automatico** di risultati e calendari da calciomagazine.net
-- **Classifiche live** calcolate dai risultati scaricati
-- **Filtri statistici** configurabili (ultime N partite, ultimi 30/60 giorni, solo 2026, ecc.)
-- **Esportazione/importazione** dei dati in formato JSON per backup
-- **Interfaccia desktop** nativa con pywebview (opzionale) o browser
-- **Deduplicazione automatica** dei risultati durante lo scrape
-- **Date delle partite** mostrate nelle card dei pronostici
+| Lega | Pronostico | Significato |
+|------|-----------|-------------|
+| **Serie B** | **Casa Over 0.5** | Probabilità che la squadra di casa segni almeno 1 gol |
+| **Serie C** (Gir. A/B/C) | **Ospite Under 1.5** | Probabilità che la squadra ospite subisca al massimo 1 gol |
 
-## Campionati coperti
-
-| Campionato | Pronostico |
-|---|---|
-| **Serie B** | Casa Over 0.5 — probabilità che la squadra di casa segni almeno 1 gol |
-| **Serie C Girone A** | Ospite Under 1.5 — probabilità che la squadra ospite segni meno di 2 gol |
-| **Serie C Girone B** | Ospite Under 1.5 |
-| **Serie C Girone C** | Ospite Under 1.5 |
+Le partite vengono ordinate per probabilità decrescente, permettendo di individuare rapidamente le scommesse statisticamente più promettenti.
 
 ---
 
-## Installazione
+## 🧮 Il modello Poisson
+
+Il cuore dell'applicazione è la [distribuzione di Poisson](https://it.wikipedia.org/wiki/Distribuzione_di_Poisson), un modello statistico classico per eventi rari e indipendenti, ampiamente usato nell'analisi calcistica.
+
+### Come funziona
+
+Per ogni partita futura, l'app calcola un parametro **λ (lambda)** che rappresenta il numero atteso di gol. Il calcolo si basa su:
+
+**Serie B — Casa Over 0.5:**
+```
+λ = (Attacco_Casa × Difesa_Ospite) / Media_Lega
+
+dove:
+  Attacco_Casa   = media gol fatti in casa dalla squadra di casa
+  Difesa_Ospite  = media gol subiti in trasferta dalla squadra ospite
+  Media_Lega     = media gol per partita dell'intero campionato
+
+P(Casa Over 0.5) = 1 − P(X = 0) = 1 − e^(−λ)
+```
+
+**Serie C — Ospite Under 1.5:**
+```
+λ = (Attacco_Ospite × Difesa_Casa) / Media_Lega
+
+dove:
+  Attacco_Ospite = media gol fatti in trasferta dalla squadra ospite
+  Difesa_Casa    = media gol subiti in casa dalla squadra di casa
+
+P(Ospite Under 1.5) = P(X = 0) + P(X = 1) = e^(−λ) + λ·e^(−λ)
+```
+
+### Range statistici
+
+L'utente può scegliere su quale sottoinsieme di partite calcolare le statistiche:
+
+- **Tutta la stagione** — tutti i risultati disponibili
+- **Ultime N partite** (5, 8, 10, 15) — per squadra, per catturare il "momento di forma"
+- **Solo 2026** — solo partite del girone di ritorno
+- **Ultimi 30/60 giorni** — finestra temporale mobile
+- **Personalizzato** — numero di partite a scelta (3-38)
+
+---
+
+## 📁 Struttura del progetto
+
+Il repository contiene **due versioni indipendenti** che differiscono esclusivamente per la fonte dati utilizzata per lo scraping. Il modello statistico, l'interfaccia web e le funzionalità sono identiche.
+
+```
+pronostici-serie-b-c/
+├── README.md
+├── pronostici_app_calcioMagazine.py    ← Fonte: calciomagazine.net
+└── pronostici_app_Wikipedia.py         ← Fonte: it.wikipedia.org
+```
+
+### Perché due versioni?
+
+I siti di calcio cambiano frequentemente struttura HTML. Avere due fonti dati garantisce ridondanza: se una fonte smette di funzionare, l'altra resta disponibile. Le due versioni sono completamente intercambiabili.
+
+---
+
+## 🔍 Le due fonti dati
+
+### 1. `pronostici_app_calcioMagazine.py`
+
+**Fonte:** [calciomagazine.net](https://www.calciomagazine.net)
+
+Effettua lo scraping di **due pagine separate** per ogni campionato:
+- **Pagina risultati** — contiene tutti i punteggi delle partite giocate, raggruppati per giornata
+- **Pagina calendario** — contiene le date e gli orari delle partite future
+
+Il parsing è **text-based**: l'HTML viene convertito in testo pulito e poi analizzato con regex. I formati gestiti sono:
+
+```
+27ª Giornata
+16.02. ore 20:30 Pineto-Ternana 0 : 3              ← risultato
+Domenica 22.02.2026 ore 18:30 Arezzo-Campobasso     ← prossima partita
+```
+
+La prossima giornata viene determinata confrontando risultati e calendario: la prima giornata con meno risultati che partite in programma è quella "da giocare".
+
+**Dipendenze:** `flask`, `requests`
+
+**URL scraping (stagione 2025-2026):**
+
+| Lega | Risultati | Calendario |
+|------|-----------|------------|
+| Serie B | `risultati-serie-b-120385.html` | `calendario-serie-b-99638.html` |
+| Serie C Gir. A | `risultati-serie-c-girone-a-120404.html` | `calendario-serie-c-girone-a-99207.html` |
+| Serie C Gir. B | `risultati-serie-c-girone-b-120417.html` | `calendario-serie-c-girone-b-99208.html` |
+| Serie C Gir. C | `risultati-serie-c-girone-c-120418.html` | `calendario-serie-c-girone-c-99209.html` |
+
+---
+
+### 2. `pronostici_app_Wikipedia.py`
+
+**Fonte:** [it.wikipedia.org](https://it.wikipedia.org)
+
+Effettua lo scraping di **due sole pagine** Wikipedia per tutti i dati:
+- [`Serie_B_2025-2026`](https://it.wikipedia.org/wiki/Serie_B_2025-2026) — risultati e calendario completo
+- [`Serie_C_2025-2026`](https://it.wikipedia.org/wiki/Serie_C_2025-2026) — tutti e 3 i gironi in un'unica pagina
+
+Il parsing è **DOM-based** con BeautifulSoup. Le due leghe hanno strutture HTML molto diverse:
+
+**Serie B** — formato semplice, una partita per riga:
+```
+| 8 dic. | Avellino-Juve Stabia | 1-1 |     ← risultato
+| 1 mar. | Monza-Catanzaro      | 19:30 |   ← prossima partita (orario)
+| 5 apr. | Empoli-Cesena        | - |        ← da programmare
+```
+
+**Serie C** — formato combinato andata/ritorno, due partite per riga:
+```
+| 23 ago. | 2-2 | AlbinoLeffe-Dolomiti Bellunesi | 0-2 | 4 gen. |
+   ↑ data     ↑ ris.        ↑ squadre            ↑ ris.   ↑ data
+  andata    andata                              ritorno  ritorno
+```
+
+Le colonne data usano `rowspan` per raggruppare più partite nella stessa data. Il parser tiene traccia dei rowspan attivi per entrambe le colonne (andata e ritorno). La struttura della pagina Wiki varia anche tra gironi: A e B hanno le tabelle nella sezione "Calendario", il C nella sezione "Risultati".
+
+La deduplicazione è necessaria perché Wikipedia mostra ogni tabella in tre viste (collassata, espansa andata, espansa ritorno).
+
+**Dipendenze:** `flask`, `requests`, `beautifulsoup4`
+
+---
+
+## 🚀 Installazione e avvio
 
 ### Requisiti
-
-- Python 3.8+
+- **Python 3.8+**
 - Connessione internet (per lo scraping)
 
-### Setup rapido
+### Avvio rapido
 
 ```bash
 # Clona il repository
-git clone https://github.com/<tuo-username>/pronostici-serie-b-c.git
+git clone https://github.com/TUO-USERNAME/pronostici-serie-b-c.git
 cd pronostici-serie-b-c
 
-# Installa le dipendenze
+# Scegli la versione da usare:
+
+# Opzione A — calciomagazine.net
 pip install flask requests
+python pronostici_app_calcioMagazine.py
 
-# (Opzionale) Per la finestra desktop nativa
+# Opzione B — Wikipedia
+pip install flask requests beautifulsoup4
+python pronostici_app_Wikipedia.py
+```
+
+L'app si avvia su **`http://localhost:5050`**.
+
+### Modalità desktop (opzionale)
+
+Se `pywebview` è installato, l'app si apre automaticamente in una finestra desktop nativa invece del browser:
+
+```bash
 pip install pywebview
-
-# Avvia l'applicazione
-python pronostici_app.py
+python pronostici_app_Wikipedia.py   # si apre come app desktop
 ```
-
-Al primo avvio vengono caricati automaticamente ~1000 risultati seed incorporati nello script (dati calciomagazine.net, febbraio 2026).
-
-### Avvio
-
-L'app si avvia su `http://localhost:5050`:
-
-- **Con pywebview installato**: si apre automaticamente una finestra desktop nativa
-- **Senza pywebview**: si apre il browser predefinito
 
 ---
 
-## Come funziona
+## 🖥️ Interfaccia
 
-### Il modello di Poisson
+L'interfaccia web è una **Single Page Application** integrata direttamente nel file Python (nessun file HTML esterno). Include:
 
-Il motore predittivo utilizza la [distribuzione di Poisson](https://it.wikipedia.org/wiki/Distribuzione_di_Poisson) per stimare la probabilità di un certo numero di gol in una partita. Il parametro chiave è **λ (lambda)**, che rappresenta il numero di gol attesi.
+### Tab Pronostici
+- **Serie B — Casa Over 0.5**: card per ogni partita della prossima giornata, ordinate per probabilità
+- **Serie C — Ospite Under 1.5**: card per tutti e 3 i gironi, ordinate per probabilità globale
+- Ogni card mostra: probabilità %, barra visuale colorata (verde/giallo/rosso), λ, rating attacco/difesa, numero partite giocate, data
 
-#### Serie B — Casa Over 0.5
+### Tab Classifiche
+- Classifica completa Serie B
+- Classifiche separate per ogni girone di Serie C
+- Colonne: G (giocate), V (vittorie), P (pareggi), S (sconfitte), GF, GS, Pt
 
-Per ogni partita, si calcola il lambda della squadra di casa:
+### Pannello Range Statistiche
+- Selettore per cambiare il periodo di calcolo (tutta la stagione, ultime N, ecc.)
+- Ricalcolo istantaneo dei pronostici
 
-```
-λ_casa = (Attacco_Casa × Difesa_Trasferta) / Media_Lega
-```
-
-Dove:
-- **Attacco Casa** = media gol fatti in casa dalla squadra di casa
-- **Difesa Trasferta** = media gol subiti in trasferta dalla squadra ospite
-- **Media Lega** = media gol per partita dell'intero campionato
-
-La probabilità "Casa Over 0.5" è:
-
-```
-P(gol ≥ 1) = 1 − P(gol = 0) = 1 − e^(−λ)
-```
-
-#### Serie C — Ospite Under 1.5
-
-Per la Serie C, si calcola il lambda della squadra ospite:
-
-```
-λ_ospite = (Attacco_Trasferta × Difesa_Casa) / Media_Lega
-```
-
-La probabilità "Ospite Under 1.5" è:
-
-```
-P(gol ≤ 1) = P(0) + P(1) = e^(−λ) + λ × e^(−λ)
-```
-
-### Lettura delle card
-
-Ogni card mostra:
-
-| Campo | Significato |
-|---|---|
-| **📅 Data** | Data della partita (es. Ven 21/02/2026) |
-| **Probabilità %** | Probabilità calcolata dal modello (verde ≥75%, giallo ≥55%, rosso <55%) |
-| **λ Casa/Ospite** | Gol attesi — più è alto, più gol sono probabili |
-| **Att / Def** | Media attacco della squadra analizzata / Media difesa dell'avversario |
-| **P. Casa** | Numero di partite in casa su cui si basa il calcolo |
-| **P. Trasf.** | Numero di partite in trasferta su cui si basa il calcolo |
-
-### Filtri statistici
-
-I pronostici possono essere ricalcolati su diversi range di dati:
-
-| Filtro | Descrizione |
-|---|---|
-| Tutta la stagione | Tutti i risultati disponibili |
-| Ultime 5/8/10/15 | Ultime N partite per squadra |
-| Solo 2026 | Solo partite dal 1 gennaio 2026 |
-| Ultimi 30gg / 60gg | Partite degli ultimi 30 o 60 giorni |
-| Personalizzato | Numero di partite a scelta |
+### Gestione dati
+- **🔄 Aggiorna** — scarica i dati aggiornati dalla fonte
+- **📤 Esporta JSON** — backup completo dei dati
+- **📥 Importa JSON** — ripristino da backup
+- **🗑️ Reset** — cancella tutti i dati
 
 ---
 
-## Fonti dati
+## 🔌 API REST
 
-| Dato | Fonte | URL |
-|---|---|---|
-| Risultati Serie B | calciomagazine.net | [Risultati Serie B](https://www.calciomagazine.net/risultati-serie-b-120385.html) |
-| Risultati Serie C Gir. A | calciomagazine.net | [Risultati Serie C A](https://www.calciomagazine.net/risultati-serie-c-girone-a-120404.html) |
-| Risultati Serie C Gir. B | calciomagazine.net | [Risultati Serie C B](https://www.calciomagazine.net/risultati-serie-c-girone-b-120417.html) |
-| Risultati Serie C Gir. C | calciomagazine.net | [Risultati Serie C C](https://www.calciomagazine.net/risultati-serie-c-girone-c-120418.html) |
-| Calendario Serie C Gir. A | calciomagazine.net | [Calendario Serie C A](https://www.calciomagazine.net/calendario-serie-c-girone-a-99200.html) |
-| Calendario Serie C Gir. B | calciomagazine.net | [Calendario Serie C B](https://www.calciomagazine.net/calendario-serie-c-girone-b-99208.html) |
-| Calendario Serie C Gir. C | calciomagazine.net | [Calendario Serie C C](https://www.calciomagazine.net/calendario-serie-c-girone-c-99209.html) |
-
-Il calendario di Serie B viene estratto automaticamente dal link presente nella pagina dei risultati.
-
----
-
-## Architettura
-
-```
-pronostici_app.py          # Applicazione completa (singolo file)
-pronostici_data.json       # Dati persistenti (generato automaticamente)
-```
-
-### Stack tecnologico
-
-- **Backend**: Python/Flask — API REST + scraping con `requests` e `re`
-- **Frontend**: HTML/CSS/JS inline nel template Flask — nessun framework, nessun build step
-- **Persistenza**: file JSON locale (`pronostici_data.json`)
-- **Desktop** (opzionale): pywebview per finestra nativa
-
-### Flusso dati
-
-```
-calciomagazine.net
-        │
-        ▼
-   [Scraping]  ──→  parse_results()          ──→  risultati []
-        │            scrape_fixtures_from_    ──→  fixtures []
-        │            calendario()
-        ▼
-  pronostici_data.json
-        │
-        ▼
-   [Modello Poisson]  ──→  predict_serie_b()  ──→  API /api/predict
-                           predict_serie_c()
-        │
-        ▼
-   [Frontend JS]  ──→  Card con pronostici
-```
-
-### API endpoints
+Entrambe le versioni espongono le stesse API:
 
 | Metodo | Endpoint | Descrizione |
-|---|---|---|
+|--------|----------|-------------|
 | `GET` | `/` | Interfaccia web |
-| `GET` | `/api/data` | Tutti i dati raw (risultati + fixture) |
-| `GET` | `/api/predict?range=all&customN=10` | Pronostici calcolati |
+| `GET` | `/api/status` | Stato dati: conteggi risultati, data ultimo aggiornamento |
+| `GET` | `/api/predict?range=all&customN=10` | Pronostici con filtro range |
 | `GET` | `/api/standings` | Classifiche di tutti i campionati |
-| `GET` | `/api/status` | Stato dei dati (conteggi, data aggiornamento) |
-| `GET` | `/api/export` | Esporta tutti i dati in JSON |
-| `POST` | `/api/scrape` | Scarica risultati e fixture da calciomagazine.net |
+| `GET` | `/api/data` | Dump completo dati grezzi |
+| `GET` | `/api/export` | Esportazione dati (identico a `/api/data`) |
+| `POST` | `/api/scrape` | Avvia scraping dalla fonte dati |
 | `POST` | `/api/import` | Importa dati da JSON |
-| `POST` | `/api/reset` | Ripristina dati seed iniziali |
-| `POST` | `/api/fixtures` | Salva fixture manualmente |
-| `POST` | `/api/add_results` | Aggiungi risultati manualmente |
+| `POST` | `/api/reset` | Reset a dati vuoti |
 
-### Struttura dati (pronostici_data.json)
+---
+
+## 💾 Persistenza dati
+
+I dati vengono salvati in `pronostici_data.json` nella stessa cartella dello script. Il file viene creato automaticamente al primo scraping e aggiornato ad ogni operazione.
+
+Struttura del JSON (v7):
 
 ```json
 {
-  "version": 5,
-  "updatedAt": "2026-02-18",
+  "version": 7,
+  "updatedAt": "2026-02-23",
   "serieB": {
     "results": [
-      ["2026-02-15", "Venezia", "Pescara", 3, 1],
-      ["2026-02-15", "Palermo", "Sudtirol", 1, 0]
+      {"date": "2025-12-08", "home": "Avellino", "away": "Juve Stabia", "hg": 1, "ag": 1}
     ],
-    "fixtures": [
-      {"h": "Venezia", "a": "Pescara", "date": "2026-02-22"},
-      {"h": "Frosinone", "a": "Empoli", "date": "2026-02-22"}
+    "results_by_giornata": {"1": [...], "2": [...]},
+    "next_giornata": 27,
+    "next_fixtures": [
+      {"date": "2026-03-01", "home": "Monza", "away": "Catanzaro"}
     ]
   },
-  "serieCa": { "results": [], "fixtures": [] },
-  "serieCb": { "results": [], "fixtures": [] },
-  "serieCc": { "results": [], "fixtures": [] }
+  "serieCa": { "..." : "stessa struttura" },
+  "serieCb": { "..." : "stessa struttura" },
+  "serieCc": { "..." : "stessa struttura" }
 }
 ```
 
-Ogni risultato è un array `[data, casa, trasferta, gol_casa, gol_trasferta]`.
+La versione calcioMagazine include anche `calendar_by_giornata` con il calendario completo di tutte le giornate.
+
+Entrambe le versioni supportano la **migrazione automatica** dal vecchio formato v6 (liste) al nuovo formato v7 (dizionari).
 
 ---
 
-## Utilizzo
+## ⚠️ Note e limitazioni
 
-### Flusso normale
-
-1. Avvia l'app con `python pronostici_app.py`
-2. Premi **🔄 Aggiorna da calciomagazine.net** per scaricare i dati più recenti
-3. Consulta i **📊 Pronostici**, ordinati per probabilità decrescente
-4. Usa i **filtri** per affinare l'analisi (es. solo ultime 8 partite)
-5. Consulta le **🏆 Classifiche** per il contesto
-
-### Backup e ripristino
-
-- **📤 Esporta JSON**: salva un file di backup con tutti i dati
-- **📥 Importa JSON**: ricarica un backup precedentemente esportato
-- **🗑 Reset**: ripristina i dati seed iniziali incorporati nello script
+- **Nessuna quota bookmaker**: l'app calcola solo probabilità statistiche pure, senza incorporare le quote dei siti di scommesse. Le probabilità non tengono conto del margine del bookmaker.
+- **Modello semplificato**: il Poisson assume indipendenza tra i gol e non considera fattori come infortuni, squalifiche, motivazione, condizioni meteo.
+- **Dipendenza dalla struttura HTML**: lo scraping può rompersi se i siti fonte cambiano layout. In tal caso, usare l'altra versione come fallback.
+- **SSL**: entrambe le versioni usano `verify=False` nelle richieste HTTPS per aggirare problemi di certificati su alcuni sistemi. Non è ideale per la sicurezza, ma funzionale per lo scraping.
+- **Solo stagione corrente**: gli URL sono codificati per la stagione 2025-2026 e andranno aggiornati manualmente per le stagioni successive.
 
 ---
 
-## Limitazioni e disclaimer
+## 📜 Licenza
 
-- I pronostici sono **puramente statistici** e basati sullo storico dei risultati
-- Il modello di Poisson assume indipendenza tra gol e non considera: infortuni, squalifiche, motivazioni, condizioni meteo, mercato, ecc.
-- Le probabilità **non sono** consigli di scommessa
-- Lo scraping dipende dalla struttura HTML di calciomagazine.net — eventuali modifiche al sito potrebbero richiedere aggiornamenti al parser
-- La determinazione automatica della "prossima giornata" si basa sul numero di giornata più recente trovato nei risultati
-
----
-
-## Licenza
-
-MIT
+Progetto personale a scopo educativo e di intrattenimento. I dati delle partite appartengono alle rispettive fonti (calciomagazine.net, Wikipedia). Il gioco d'azzardo comporta rischi: gioca responsabilmente.

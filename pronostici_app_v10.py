@@ -18,6 +18,15 @@ import json, re, os, math, sys
 from datetime import datetime, date, timedelta
 from pathlib import Path
 
+# ── Fix encoding Windows per exe PyInstaller (--noconsole) ──────────────────
+# Con --noconsole sys.stdout/stderr sono None e Windows usa cp1252 di default.
+# Redireziona su file di log UTF-8 per evitare crash su emoji/caratteri speciali.
+if getattr(sys, 'frozen', False):
+    _base = Path(sys.executable).parent
+    _log  = open(_base / 'pronostici.log', 'w', encoding='utf-8', buffering=1)
+    sys.stdout = _log
+    sys.stderr = _log
+
 # ── Dipendenze ────────────────────────────────────────────────
 try:
     from flask import Flask, jsonify, request, render_template_string
@@ -41,7 +50,13 @@ except ImportError:
 # ============================================================
 # CONFIG
 # ============================================================
-APP_DIR   = Path(__file__).parent
+def get_base_dir():
+    """Ritorna la cartella base corretta sia in sviluppo che dentro un exe PyInstaller."""
+    if getattr(sys, 'frozen', False):  # siamo dentro un exe compilato
+        return Path(sys.executable).parent
+    return Path(__file__).parent
+
+APP_DIR   = get_base_dir()
 DATA_FILE = APP_DIR / "pronostici_data.json"
 PORT      = 5050
 
@@ -146,7 +161,7 @@ def cm_parse_results(html):
     current_g = 0
     g_re  = re.compile(r"(\d+)[ªa°]\s*Giornata", re.IGNORECASE)
     r_re  = re.compile(
-        r"(\d{2})\.(\d{2})\.\s*ore\s*\d{1,2}:\d{2}\s+"
+        r"(\d{2})\.(\d{2})\.\s*ore\s*(\d{1,2}:\d{2})\s+"
         r"(.+?)\s*[-–]\s*(.+?)\s+(\d+)\s*:\s*(\d+)"
     )
     r_alt = re.compile(
@@ -163,7 +178,22 @@ def cm_parse_results(html):
             current_g = int(gm.group(1))
             giornate.setdefault(current_g, [])
             continue
-        rm = r_re.search(line) or r_alt.search(line)
+        rm = r_re.search(line)
+        if rm and current_g > 0:
+            day_n, month = int(rm.group(1)), int(rm.group(2))
+            time_str     = rm.group(3)
+            home, away   = rm.group(4).strip(), rm.group(5).strip()
+            hg, ag       = int(rm.group(6)), int(rm.group(7))
+            year         = _infer_year(month, day_n)
+            try:
+                date_str = date(year, month, day_n).isoformat()
+            except ValueError:
+                date_str = f"{year}-{month:02d}-{day_n:02d}"
+            giornate[current_g].append(
+                {"date": date_str, "time": time_str, "home": home, "away": away, "hg": hg, "ag": ag}
+            )
+            continue
+        rm = r_alt.search(line)
         if rm and current_g > 0:
             day_n, month = int(rm.group(1)), int(rm.group(2))
             home, away   = rm.group(3).strip(), rm.group(4).strip()
@@ -187,7 +217,7 @@ def cm_parse_calendar(html):
     g_re = re.compile(r"(\d+)[ªa°]\s*Giornata", re.IGNORECASE)
     f_re = re.compile(
         r"(?:luned[ìi]|marted[ìi]|mercoled[ìi]|gioved[ìi]|venerd[ìi]|sabato|domenica)\s+"
-        r"(\d{2})\.(\d{2})\.(\d{2,4})\s+ore\s*\d{1,2}:\d{2}\s+"
+        r"(\d{2})\.(\d{2})\.(\d{2,4})\s+ore\s*(\d{1,2}:\d{2})\s+"
         r"(.+?)\s*[-–]\s*(.+?)(?:\s*$)",
         re.IGNORECASE,
     )
@@ -204,21 +234,39 @@ def cm_parse_calendar(html):
             day_n, month = int(fm.group(1)), int(fm.group(2))
             year_raw = int(fm.group(3))
             year     = year_raw + 2000 if year_raw < 100 else year_raw
-            home     = fm.group(4).strip()
-            away     = re.sub(r"\s*\*+$", "", fm.group(5)).strip()
+            time_str = fm.group(4)
+            home     = fm.group(5).strip()
+            away     = re.sub(r"\s*\*+$", "", fm.group(6)).strip()
             try:
                 date_str = date(year, month, day_n).isoformat()
             except ValueError:
                 date_str = f"{year}-{month:02d}-{day_n:02d}"
-            giornate[current_g].append({"date": date_str, "home": home, "away": away})
+            giornate[current_g].append({"date": date_str, "time": time_str, "home": home, "away": away})
     return giornate
 
+
+def _fixtures_are_future(fixtures):
+    """Ritorna True se almeno un fixture ha data >= oggi (o data sconosciuta)."""
+    today = date.today().isoformat()
+    for f in fixtures:
+        d = f.get("date", "")
+        if not d or d >= today:
+            return True
+    return False
+
+def _filter_future_fixtures(fixtures):
+    """Ritorna solo i fixture con data >= oggi (o senza data)."""
+    today = date.today().isoformat()
+    return [f for f in fixtures if not f.get("date") or f["date"] >= today]
 
 def cm_find_next_giornata(results_by_g, calendar_by_g):
     if calendar_by_g:
         all_g = sorted(set(list(results_by_g) + list(calendar_by_g)))
         for g in all_g:
-            if len(results_by_g.get(g, [])) < len(calendar_by_g.get(g, [])):
+            cal = calendar_by_g.get(g, [])
+            res = results_by_g.get(g, [])
+            # Giornata incompleta E con almeno un fixture futuro
+            if len(res) < len(cal) and _fixtures_are_future(cal):
                 return g
         return (max(all_g) + 1) if all_g else 1
     if results_by_g:
@@ -264,7 +312,7 @@ def scrape_calciomagazine(data):
             rbg_int = {int(k): v for k, v in data[key].get("results_by_giornata", {}).items()}
             next_g  = cm_find_next_giornata(rbg_int, cbg)
             data[key]["next_giornata"] = next_g
-            data[key]["next_fixtures"] = cbg.get(next_g, [])
+            data[key]["next_fixtures"] = _filter_future_fixtures(cbg.get(next_g, []))
             log.append(f"  → Prossima: {next_g}ª ({len(data[key]['next_fixtures'])} partite)")
     return errors, log
 
@@ -471,10 +519,12 @@ def wiki_parse_serie_c_girone(soup, girone_letter):
 
 
 def wiki_find_next_giornata(giornate_data):
+    today = date.today().isoformat()
+    # Solo giornate con almeno un fixture futuro
     candidates = [
-        (g, len(d.get("fixtures", [])))
+        (g, len([f for f in d.get("fixtures", []) if not f.get("date") or f["date"] >= today]))
         for g, d in giornate_data.items()
-        if d.get("fixtures")
+        if any(not f.get("date") or f["date"] >= today for f in d.get("fixtures", []))
     ]
     if not candidates:
         return max(giornate_data) + 1 if giornate_data else 1
@@ -494,7 +544,9 @@ def _process_wiki_giornate(giornate_data, key, data):
         data[key]["results"] = all_r
         next_g = wiki_find_next_giornata(giornate_data)
         data[key]["next_giornata"] = next_g
-        data[key]["next_fixtures"] = giornate_data.get(next_g, {}).get("fixtures", [])
+        data[key]["next_fixtures"] = _filter_future_fixtures(
+            giornate_data.get(next_g, {}).get("fixtures", [])
+        )
         return len(all_r), len(giornate_data), next_g, len(data[key]["next_fixtures"])
     return 0, 0, 0, 0
 
@@ -1083,7 +1135,7 @@ def predict_serie_b(results, fixtures, range_type="all", custom_n=10,
         preds.append({"h":h,"a":a,"prob":round(prob,4),"prob_raw":round(raw_prob,4),
                       "lam":round(lh,2),"lam_a":round(la,2),
                       "hA":round(hA,2),"aD":round(aD,2),"hG":hs["hg"],"aG":as_["ag"],
-                      "hf":round(hf_,2),"rho":round(rho,3),"date":fix.get("date",""),
+                      "hf":round(hf_,2),"rho":round(rho,3),"date":fix.get("date",""),"time":fix.get("time",""),
                       "elo_h": elo.get(h, 1500), "elo_a": elo.get(a, 1500),
                       "elo_lbl_h": elo_label(elo.get(h, 1500)),
                       "elo_lbl_a": elo_label(elo.get(a, 1500))})
@@ -1122,7 +1174,7 @@ def predict_serie_c(results, fixtures, range_type="all", custom_n=10,
         preds.append({"h":h,"a":a,"prob":round(prob,4),"prob_raw":round(raw_prob,4),
                       "lam":round(la,2),"lam_h":round(lh,2),
                       "aA":round(aA,2),"hD":round(hD,2),"hG":hs["hg"],"aG":as_["ag"],
-                      "hf":round(hf_,2),"rho":round(rho,3),"date":fix.get("date",""),
+                      "hf":round(hf_,2),"rho":round(rho,3),"date":fix.get("date",""),"time":fix.get("time",""),
                       "elo_h": elo.get(h, 1500), "elo_a": elo.get(a, 1500),
                       "elo_lbl_h": elo_label(elo.get(h, 1500)),
                       "elo_lbl_a": elo_label(elo.get(a, 1500))})
@@ -1714,11 +1766,13 @@ function toast(msg) {
 }
 function pc(p) { return p >= 0.80 ? 'high' : p >= 0.65 ? 'mid' : 'low'; }
 function pcol(p) { return p >= 0.80 ? '#34d399' : p >= 0.65 ? '#fbbf24' : '#f87171'; }
-function fmtDate(d) {
+function fmtDate(d, t) {
   if (!d) return '';
   const [y,m,dd] = d.split('-');
   const days = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
-  return days[new Date(+y,m-1,+dd).getDay()] + ' ' + dd + '/' + m + '/' + y;
+  let s = days[new Date(+y,m-1,+dd).getDay()] + ' ' + dd + '/' + m + '/' + y;
+  if (t) s += ' · ' + t;
+  return s;
 }
 
 // ── Status ─────────────────────────────────────────────────────────────────────
@@ -1867,7 +1921,7 @@ function attachCardTips(id, p, isB) {
 }
 
 function crdB(i, p) {
-  const dt = p.date ? `<div class="match-date">📅 ${fmtDate(p.date)}</div>` : '';
+  const dt = p.date ? `<div class="match-date">📅 ${fmtDate(p.date, p.time)}</div>` : '';
   const fairOdds = (1 / p.prob).toFixed(2);
   const precal = p.prob_raw
     ? `<span class="precal-tip tipwrap" style="font-size:.65rem;color:var(--text2)">(pre-cal ${(p.prob_raw*100).toFixed(1)}%)</span>`
@@ -1892,7 +1946,7 @@ function crdB(i, p) {
 }
 
 function crdC(i, p) {
-  const dt = p.date ? `<div class="match-date">📅 ${fmtDate(p.date)}</div>` : '';
+  const dt = p.date ? `<div class="match-date">📅 ${fmtDate(p.date, p.time)}</div>` : '';
   const fairOdds = (1 / p.prob).toFixed(2);
   const precal = p.prob_raw
     ? `<span class="precal-tip tipwrap" style="font-size:.65rem;color:var(--text2)">(pre-cal ${(p.prob_raw*100).toFixed(1)}%)</span>`
@@ -2111,6 +2165,7 @@ document.querySelectorAll('.src-btn').forEach(btn => {
 # ============================================================
 if __name__ == "__main__":
     import threading
+
 
     if not DATA_FILE.exists():
         save_data(get_default_data())

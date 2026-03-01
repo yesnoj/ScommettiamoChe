@@ -302,6 +302,57 @@ Il database è retrocompatibile con versioni precedenti: i campi mancanti vengon
 
 ---
 
+## Tooltip informativi
+
+Ogni elemento interattivo dell'interfaccia mostra un tooltip al passaggio del mouse con la spiegazione del valore o del controllo. I tooltip sono gestiti da un layer globale (`#gtooltip`) agganciato al `<body>` — non vengono mai tagliati dall'`overflow:hidden` delle card.
+
+Sono presenti tooltip su:
+- Ogni campo delle card (%, quota fair, pre-cal, λ, Att/Def, Campo, ρ, Elo)
+- Tutti e 5 i toggle del modello statistico (Poisson, Decay, HF, DC, Calibrazione)
+- I bottoni principali (Aggiorna, Esporta, Importa, Reset)
+- I bottoni fonte dati (calciomagazine, Wikipedia)
+
+Il bottone **💬 Tooltip ON/OFF** nella barra strumenti disabilita/riabilita tutti i tooltip globalmente.
+
+---
+
+## Distribuzione come eseguibile (.exe)
+
+L'app può essere compilata in un singolo file `.exe` per Windows tramite **PyInstaller**, senza richiedere Python installato sul PC di destinazione.
+
+### Build manuale
+
+```bash
+py -3.12 -m pip install pyinstaller flask requests beautifulsoup4 pywebview
+py -3.12 -m PyInstaller --onefile --noconsole --name "PronosticiCalcio" pronostici_app_v10.py
+```
+
+L'exe viene generato in `dist\PronosticiCalcio.exe`.
+
+### Build automatica con build_exe.bat
+
+Fai doppio click su `build_exe.bat` nella stessa cartella del sorgente. Lo script:
+1. Verifica la presenza di Python 3.12
+2. Aggiorna automaticamente tutte le dipendenze
+3. Pulisce la build precedente
+4. Compila l'exe
+5. Copia `PronosticiCalcio.exe` direttamente nella cartella corrente
+
+### Nota sul file dati
+
+Il codice usa `get_base_dir()` per determinare il percorso del database JSON a runtime:
+
+```python
+def get_base_dir():
+    if getattr(sys, 'frozen', False):  # dentro l'exe
+        return Path(sys.executable).parent
+    return Path(__file__).parent
+```
+
+Questo assicura che `pronostici_data.json` venga sempre letto e scritto **accanto all'exe**, non in una cartella temporanea di sistema. Tieni sempre i due file nella stessa cartella.
+
+---
+
 ## Note tecniche
 
 - Il server Flask gira su `127.0.0.1:5050` (solo locale, non esposto in rete)

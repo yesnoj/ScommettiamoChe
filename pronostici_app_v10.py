@@ -1514,6 +1514,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .st tr:hover{background:rgba(34,211,238,.04)}
 .empty{text-align:center;padding:36px;color:var(--text2);font-size:0.82rem}
 .section-sep{border:none;border-top:1px solid var(--border);margin:20px 0}
+
+/* ── Guide Modal ── */
+.guide-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto}
+.guide-overlay.show{display:flex}
+.guide-box{background:#111827;border:1px solid #22d3ee;border-radius:18px;width:100%;max-width:860px;padding:28px 32px 36px;position:relative;color:#e2e8f0;font-size:.88rem;line-height:1.7;margin:auto}
+.guide-close{position:absolute;top:14px;right:18px;font-size:1.5rem;cursor:pointer;color:#94a3b8;background:none;border:none;line-height:1;transition:color .2s}
+.guide-close:hover{color:#22d3ee}
+.guide-box h1{font-family:'Space Mono',monospace;font-size:1.2rem;background:linear-gradient(135deg,#22d3ee,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.guide-box .guide-version{color:#475569;font-size:.72rem;font-family:'Space Mono',monospace;margin-bottom:16px}
+.guide-box h2{font-family:'Space Mono',monospace;font-size:.82rem;color:#22d3ee;text-transform:uppercase;letter-spacing:1px;margin:26px 0 8px;padding-bottom:5px;border-bottom:1px solid #1e293b}
+.guide-box h3{font-family:'Space Mono',monospace;font-size:.76rem;color:#a78bfa;margin:14px 0 5px}
+.guide-box p{margin-bottom:8px;color:#cbd5e1}
+.guide-box ul{margin:4px 0 10px 20px;color:#cbd5e1}
+.guide-box li{margin-bottom:4px}
+.guide-box code{background:#1a2235;border:1px solid #1e293b;border-radius:4px;padding:1px 6px;font-family:'Space Mono',monospace;font-size:.75rem;color:#34d399}
+.guide-formula{background:#0f172a;border-left:3px solid #22d3ee;border-radius:0 8px 8px 0;padding:10px 16px;margin:8px 0 12px;font-family:'Space Mono',monospace;font-size:.76rem;color:#a78bfa;line-height:1.9}
+.guide-warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:8px;padding:9px 13px;color:#fbbf24;margin:8px 0;font-size:.83rem}
+.guide-ok{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:8px;padding:9px 13px;color:#34d399;margin:8px 0;font-size:.83rem}
+.guide-nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+.guide-nav button{padding:4px 12px;border-radius:8px;background:#1a2235;border:1px solid #1e293b;color:#94a3b8;font-size:.7rem;font-family:'Space Mono',monospace;cursor:pointer;transition:all .2s}
+.guide-nav button:hover{border-color:#22d3ee;color:#22d3ee}
+.btn-help{background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.4)}
+.btn-help:hover{background:rgba(167,139,250,.25)}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
   background:var(--card);border:1px solid var(--accent);border-radius:10px;padding:12px 24px;
   font-size:0.82rem;color:var(--accent);box-shadow:0 8px 30px rgba(0,0,0,.4);
@@ -1569,6 +1592,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <button class="btn btn-g" onclick="doExport()">📤 Esporta JSON</button>
   <button class="btn btn-s" onclick="document.getElementById('importFile').click()">📥 Importa JSON</button>
   <button class="btn btn-d" onclick="doReset()">🗑️ Reset</button>
+  <button class="btn btn-help" onclick="openGuide()">📖 Guida</button>
   <button class="btn btn-s" id="tipToggleBtn" onclick="toggleTips()" title="Attiva/disattiva i tooltip informativi">💬 Tooltip ON</button>
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="doImport(event)">
 </div>
@@ -2155,7 +2179,163 @@ document.querySelectorAll('.src-btn').forEach(btn => {
   };
   if (tips[src]) tip(btn, tips[src]);
 });
+
+// ── Guide modal ──────────────────────────────────────────────────────────────
+function openGuide() {
+  document.getElementById('guideOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeGuide() {
+  document.getElementById('guideOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function closeGuideOutside(e) {
+  if (e.target === document.getElementById('guideOverlay')) closeGuide();
+}
+function scrollSec(id) {
+  const el = document.getElementById(id);
+  if (el) { el.scrollIntoView({behavior:'smooth', block:'start'}); }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGuide(); });
+
 </script>
+
+<!-- ═══ GUIDA MODALE ═══ -->
+<div class="guide-overlay" id="guideOverlay" onclick="closeGuideOutside(event)">
+<div class="guide-box">
+  <button class="guide-close" onclick="closeGuide()">✕</button>
+  <h1>📖 Guida completa — Pronostici Serie B &amp; C</h1>
+  <p class="guide-version">Versione 10 · Dixon-Coles + Decay + Fattore Campo + Calibrazione isotonica</p>
+
+  <nav class="guide-nav">
+    <button onclick="scrollSec('g-panoramica')">🗺 Panoramica</button>
+    <button onclick="scrollSec('g-fonti')">📡 Fonti dati</button>
+    <button onclick="scrollSec('g-modello')">🧮 Il modello</button>
+    <button onclick="scrollSec('g-layer')">🔀 Layer toggle</button>
+    <button onclick="scrollSec('g-card')">🃏 Leggere una card</button>
+    <button onclick="scrollSec('g-range')">📐 Range statistiche</button>
+    <button onclick="scrollSec('g-elo')">♟ Elo rating</button>
+    <button onclick="scrollSec('g-backtest')">📊 Backtest v10</button>
+    <button onclick="scrollSec('g-dev')">🛠 Modificare il modello</button>
+  </nav>
+
+  <h2 id="g-panoramica">🗺 Panoramica</h2>
+  <p>L'app genera pronostici per due mercati specifici:</p>
+  <ul>
+    <li><b>Serie B → CASA OVER 0.5</b>: probabilità che la squadra di casa segni almeno 1 gol.</li>
+    <li><b>Serie C (tutti i gironi) → OSPITE UNDER 1.5</b>: probabilità che l'ospite segni al massimo 1 gol.</li>
+  </ul>
+  <p>Le partite mostrate sono quelle della <b>prossima giornata non ancora giocata</b>, ordinate dalla probabilità più alta alla più bassa. I dati vengono scaricati premendo 🔄 e salvati localmente in <code>pronostici_data.json</code>.</p>
+
+  <h2 id="g-fonti">📡 Fonti dati</h2>
+  <h3>📰 calciomagazine.net (consigliata)</h3>
+  <p>Pagine separate per risultati e calendario. Parser regex su testo grezzo. Unica fonte che estrae anche l'<b>orario</b> della partita. Due richieste HTTP per campionato.</p>
+  <h3>🌐 Wikipedia (it.wikipedia.org)</h3>
+  <p>Tabelle HTML delle pagine stagionali, parser BeautifulSoup. Struttura molto stabile — ottima come backup. Due richieste totali.</p>
+  <h3>📋 Tuttosport</h3>
+  <p>Pagine calendario live. Layout può cambiare senza preavviso.</p>
+  <div class="guide-warn">⚠️ Tieni sempre <code>pronostici_data.json</code> nella stessa cartella dell'exe. Senza questo file l'app riparte da zero.</div>
+
+  <h2 id="g-modello">🧮 Il modello statistico</h2>
+  <p>Modello <b>Poisson bivariato con correzione Dixon-Coles</b>, esteso con decadimento temporale, fattore campo adattivo e calibrazione isotonica.</p>
+
+  <h3>Fase 1 — Statistiche con decadimento</h3>
+  <p>Per ogni squadra si calcolano medie pesate temporalmente:</p>
+  <div class="guide-formula">hA = media gol fatti in CASA (pesata per recency)<br>aA = media gol fatti in TRASFERTA<br>hD = media gol subiti in CASA<br>aD = media gol subiti in TRASFERTA</div>
+  <p>Peso di ogni partita: <code>w = e^(−0.010 × giorni)</code> → emivita 70 giorni. Una partita di 70 giorni fa pesa la metà di una giocata ieri.</p>
+
+  <h3>Fase 2 — Gol attesi λ</h3>
+  <div class="guide-formula">λ_casa   = (hA_casa × aD_ospite) / media_lega × fattore_campo<br>λ_ospite = (aA_ospite × hD_casa) / media_lega / fattore_campo</div>
+  <p>La divisione per media_lega normalizza: una squadra media produce λ ≈ 1.2. Il fattore campo amplifica il vantaggio casalingo.</p>
+
+  <h3>Fase 3 — Matrice probabilità 9×9 con Dixon-Coles</h3>
+  <div class="guide-formula">P(i,j) = Poisson(λ_casa, i) × Poisson(λ_ospite, j) × τ(i,j)</div>
+  <p>La correzione <b>τ</b> aggiusta i risultati bassi che il Poisson puro sbaglia sistematicamente:</p>
+  <div class="guide-formula">τ(0,0) = 1 − λ_casa × λ_ospite × ρ<br>τ(0,1) = 1 + λ_casa × ρ<br>τ(1,0) = 1 + λ_ospite × ρ<br>τ(1,1) = 1 − ρ &nbsp;&nbsp;&nbsp; τ(i,j) = 1 per tutti gli altri</div>
+  <p>ρ viene stimato automaticamente dai dati: confronta la frequenza reale di 0-0 e 1-1 con quella attesa. Tipicamente ρ ≈ −0.10/−0.15.</p>
+
+  <h3>Fase 4 — Probabilità del mercato</h3>
+  <div class="guide-formula">CASA OVER 0.5    = 1 − Σ P(0,j) per j=0..8<br>OSPITE UNDER 1.5 = Σ P(i,0) + Σ P(i,1) per i=0..8</div>
+
+  <h3>Fase 5 — Calibrazione (Temperature Scaling)</h3>
+  <div class="guide-formula">logit(p_calibrata) = logit(p_grezza) / T &nbsp;&nbsp; con T = 1.30</div>
+  <p>Con T &gt; 1 le probabilità estreme vengono moderate verso il 50%, riducendo l'overconfidence del modello.</p>
+
+  <h2 id="g-layer">🔀 I layer del modello</h2>
+  <h3>📊 Poisson Base (sempre attivo)</h3>
+  <p>La base del modello. Senza gli altri layer produce probabilità Poisson pure.</p>
+  <h3>⏱️ Decadimento temporale</h3>
+  <p>Peso <code>w = e^(−0.010 × giorni)</code>, emivita 70 giorni. <b>Impatto diretto sui λ.</b></p>
+  <h3>🏟️ Fattore Campo</h3>
+  <div class="guide-formula">raw = (gol_casa/partite_casa) / (gol_trasferta/partite_trasferta) / media_lega<br>hf  = 0.7 × raw + 0.3 &nbsp;(shrinkage verso 1.0)</div>
+  <p>Lo shrinkage al 30% evita fattori estremi con pochi dati. Squadre con &lt;3 partite casa/trasferta ricevono hf=1.0. <b>Impatto diretto sui λ.</b></p>
+  <h3>📐 Dixon-Coles</h3>
+  <p>Correzione τ sui risultati bassi. Effetto &lt;0.1pp con λ &gt; 2.5. <b>Agisce sulla matrice, non sui λ.</b></p>
+  <h3>🎯 Calibrazione</h3>
+  <p>Temperature scaling, applicata per ultima. Il valore <i>(pre-cal X%)</i> nella card mostra la probabilità prima di questa fase.</p>
+
+  <h2 id="g-card">🃏 Come leggere una card</h2>
+  <h3>Probabilità % e @fair odds</h3>
+  <p>La percentuale è la probabilità calibrata finale. La <b>quota fair</b> = <code>1 / probabilità</code>. Se il bookmaker offre una quota superiore, hai un edge teorico positivo.</p>
+  <div class="guide-ok">✅ Esempio: 83% → @fair 1.20. Bookmaker a 1.28 → edge teorico +6.7%</div>
+  <h3>(pre-cal X%)</h3>
+  <p>Probabilità prima del Temperature Scaling. Confrontalo con la % finale per vedere quanto ha inciso la calibrazione.</p>
+  <h3>λ Casa / Osp</h3>
+  <p>Gol attesi per squadra. Somma i due λ per i gol totali attesi.</p>
+  <h3>Att / Def</h3>
+  <p>Valori grezzi usati nel calcolo del λ. Utili per capire se λ è alto per merito dell'attacco o debolezza della difesa avversaria.</p>
+  <h3>🏟️ Campo</h3>
+  <p>Fattore campo della squadra di casa. &gt;1.0 = vantaggio casalingo sopra media.</p>
+  <h3>ρ D-C</h3>
+  <p>Parametro Dixon-Coles della lega. Tipicamente −0.10/−0.15. Più negativo = pareggi bassi più frequenti del Poisson.</p>
+  <h3>Elo (in fondo alla card)</h3>
+  <p>Rating Elo <b>solo informativo</b>, non entra nel calcolo. Utile come sanity check. ★★★★ elite (≥1600) · ★★★ forte · ★★ media · ★ debole.</p>
+
+  <h2 id="g-range">📐 Range statistiche</h2>
+  <ul>
+    <li><b>Tutta la stagione</b> — stabile, il Decay compensa la distanza temporale</li>
+    <li><b>Ultime N per squadra</b> — reattivo alla forma, instabile con N piccolo</li>
+    <li><b>Solo 2026</b> — solo girone di ritorno, coglie cambi di forma stagionali</li>
+    <li><b>Ultimi 30/60 gg</b> — finestra temporale fissa</li>
+    <li><b>Personalizzato</b> — scegli tu le partite per squadra</li>
+  </ul>
+  <div class="guide-warn">⚠️ "Tutta la stagione + Decay attivo" è la combinazione più robusta con dataset piccoli (~250 partite).</div>
+
+  <h2 id="g-elo">♟ Elo rating</h2>
+  <div class="guide-formula">nuovo = vecchio + K × (risultato − atteso) &nbsp;&nbsp; K=30<br>atteso = 1 / (1 + 10^((rating_avv − rating) / 400))</div>
+  <p>Tutti partono da 1500. L'Elo è solo visualizzato: in backtest l'integrazione nel modello non migliorava il Brier Score, probabilmente per la dimensione limitata del dataset.</p>
+
+  <h2 id="g-backtest">📊 Backtest &amp; validazione v10</h2>
+  <p>Validazione <b>walk-forward</b>: addestramento su partite passate, valutazione su quelle future. Evita look-ahead bias.</p>
+  <div class="guide-ok">✅ v10 ottiene Brier Score 0.1994–0.2279 sulle quattro leghe. Poisson puro ≈0.230.</div>
+  <p>Le quattro migliorie v10:</p>
+  <ul>
+    <li>Decay più rapido: emivita 70gg (era 139gg)</li>
+    <li>Shrinkage adattivo per il fattore campo</li>
+    <li>Prior stagionale per squadre con &lt;8 partite</li>
+    <li>Temperature Scaling T=1.30</li>
+  </ul>
+
+  <h2 id="g-dev">🛠 Modificare il modello</h2>
+  <h3>Parametri globali (5 minuti)</h3>
+  <div class="guide-formula">DECAY_XI     = 0.010  # emivita 70gg. Riduci per decay più lento<br>TEMP_DEFAULT = 1.30   # &gt;1 comprime verso 50%, &lt;1 espande</div>
+  <h3>Formula dei λ (30 minuti)</h3>
+  <p>Cerca <code>predict_serie_b</code> / <code>predict_serie_c</code>. Le righe chiave:</p>
+  <div class="guide-formula">lh = (hA * aD) / avg * hf_<br>la = (aA * hD) / avg / hf_</div>
+  <p>Qui puoi aggiungere forma recente separata, head-to-head, quote bookmaker come segnale, ecc.</p>
+  <h3>Nuovo layer togglabile (1-2 ore)</h3>
+  <ul>
+    <li>Aggiungi parametro a <code>predict_serie_b/c</code></li>
+    <li>Applica logica condizionale su λ o matrice</li>
+    <li>Aggiungi toggle HTML nella sezione <code>model-toggles</code></li>
+    <li>Passa il parametro nella fetch in <code>recalc()</code></li>
+  </ul>
+  <h3>Cambiare modello di base (qualche ora)</h3>
+  <p>Riscrivi: <code>calc_stats</code>, <code>prob_home_over_05</code>, <code>prob_away_under_15</code>. Il resto (scraping, UI, export) rimane invariato.</p>
+  <div class="guide-warn">⚠️ Ogni nuova feature va validata con backtest walk-forward. Aggiungere complessità non sempre migliora — il confronto v9/v10 lo dimostra.</div>
+</div>
+</div>
+
 </body>
 </html>"""
 

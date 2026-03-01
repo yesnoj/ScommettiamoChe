@@ -1427,6 +1427,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .elo-team .elo-val{font-family:'Space Mono',monospace;font-weight:700;font-size:0.78rem}
 .elo-team .elo-stars{font-size:0.7rem;letter-spacing:1px}
 .elo-vs{color:var(--text2);font-size:0.65rem;font-family:'Space Mono',monospace}
+.tipwrap{display:inline-block;cursor:help;border-bottom:1px dashed rgba(148,163,184,0.4)}
+#gtooltip{
+  position:fixed;z-index:9999;pointer-events:none;
+  background:#1a2235;border:1px solid #334155;border-radius:10px;
+  padding:10px 13px;max-width:260px;font-size:0.69rem;line-height:1.6;
+  color:#94a3b8;box-shadow:0 6px 24px rgba(0,0,0,0.6);
+  opacity:0;transition:opacity .12s ease;
+}
+#gtooltip.show{opacity:1}
+#gtooltip b{color:#e2e8f0}
+#gtooltip .tr{display:flex;gap:8px;border-bottom:1px solid #1e293b;padding:3px 0}
+#gtooltip .tr:last-child{border:none}
+#gtooltip .tag{color:#a78bfa;font-weight:700;white-space:nowrap;min-width:70px}
 .giornata-badge{display:inline-block;background:linear-gradient(135deg,rgba(34,211,238,.15),rgba(167,139,250,.15));
   border:1px solid var(--accent);border-radius:8px;padding:4px 12px;
   font-family:'Space Mono',monospace;font-size:0.78rem;color:var(--accent);margin-bottom:8px}
@@ -1504,6 +1517,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <button class="btn btn-g" onclick="doExport()">📤 Esporta JSON</button>
   <button class="btn btn-s" onclick="document.getElementById('importFile').click()">📥 Importa JSON</button>
   <button class="btn btn-d" onclick="doReset()">🗑️ Reset</button>
+  <button class="btn btn-s" id="tipToggleBtn" onclick="toggleTips()" title="Attiva/disattiva i tooltip informativi">💬 Tooltip ON</button>
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="doImport(event)">
 </div>
 
@@ -1538,11 +1552,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="model-panel">
   <h3>🧮 Modello Statistico</h3>
   <div class="model-toggles">
-    <div class="model-toggle" style="opacity:.7;cursor:default"><span class="toggle-base">📊 Poisson Base</span></div>
+    <div class="model-toggle" id="togPoisson" style="opacity:.7;cursor:default"><span class="toggle-base">📊 Poisson Base</span></div>
     <div class="model-toggle active" id="togDecay" onclick="toggleModel(this,'decay')"><span class="toggle-sw"></span><span class="toggle-label">⏱️ Decay 70gg</span></div>
     <div class="model-toggle active" id="togHF"    onclick="toggleModel(this,'hf')"><span class="toggle-sw"></span><span class="toggle-label">🏟️ Fattore Campo</span></div>
     <div class="model-toggle active" id="togDC"    onclick="toggleModel(this,'dc')"><span class="toggle-sw"></span><span class="toggle-label">📐 Dixon-Coles</span></div>
-    <div class="model-toggle active" id="togCal"   onclick="toggleModel(this,'calib')"><span class="toggle-sw"></span><span class="toggle-label">🎯 Calibrazione</span></div>
+    <div class="model-toggle active" id="togCalib"   onclick="toggleModel(this,'calib')"><span class="toggle-sw"></span><span class="toggle-label">🎯 Calibrazione</span></div>
   </div>
   <div class="model-info" id="modelInfo">Modello: Poisson + Decay + HF + D-C + Cal</div>
 </div>
@@ -1608,6 +1622,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 </div><!-- /container -->
 <div class="toast" id="toast"></div>
+<div id="gtooltip"></div>
 
 <script>
 // ── State ──────────────────────────────────────────────────────────────────────
@@ -1642,6 +1657,56 @@ function setSource(src) {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+// ── Global Tooltip ──────────────────────────────────────────────────────────
+const GT = document.getElementById('gtooltip');
+let gtHide;
+let tipsEnabled = true;
+
+function toggleTips() {
+  tipsEnabled = !tipsEnabled;
+  const btn = document.getElementById('tipToggleBtn');
+  if (tipsEnabled) {
+    btn.textContent = '💬 Tooltip ON';
+    btn.classList.remove('btn-d');
+    btn.classList.add('btn-s');
+  } else {
+    btn.textContent = '💬 Tooltip OFF';
+    btn.classList.remove('btn-s');
+    btn.classList.add('btn-d');
+  }
+  GT.classList.remove('show');
+}
+
+function tip(el, html) {
+  el.addEventListener('mouseenter', e => {
+    if (!tipsEnabled) return;
+    clearTimeout(gtHide);
+    GT.innerHTML = html;
+    GT.classList.add('show');
+    positionTip(e);
+  });
+  el.addEventListener('mousemove', e => {
+    if (!tipsEnabled) return;
+    positionTip(e);
+  });
+  el.addEventListener('mouseleave', () => {
+    gtHide = setTimeout(() => GT.classList.remove('show'), 80);
+  });
+}
+function positionTip(e) {
+  const pad = 14, w = GT.offsetWidth || 260, h = GT.offsetHeight || 120;
+  let x = e.clientX + pad, y = e.clientY - h / 2;
+  if (x + w > window.innerWidth - pad) x = e.clientX - w - pad;
+  if (y < pad) y = pad;
+  if (y + h > window.innerHeight - pad) y = window.innerHeight - h - pad;
+  GT.style.left = x + 'px';
+  GT.style.top  = y + 'px';
+}
+// Shorthand per righe tag+spiegazione
+function trow(tag, desc) {
+  return `<div class="tr"><span class="tag">${tag}</span><span>${desc}</span></div>`;
+}
+
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -1724,42 +1789,131 @@ function eloBlock(p) {
   </div>`;
 }
 
+// ── Tooltip content helpers ──────────────────────────────────────────────────
+const T_PRECAL = `<b>Probabilità pre-calibrazione</b><br>
+  Valore dopo Decay e Fattore Campo ma prima del Temperature Scaling (T=1.30).<br><br>
+  ${trow('⏱️ Decay','cambia: modifica i pesi storici → λ diversi')}
+  ${trow('🏟️ Campo','cambia: moltiplica/divide i λ direttamente')}
+  ${trow('📐 D-C','quasi invisibile con λ alti (&lt;0.1pp)')}
+  ${trow('🎯 Calib.','non cambia mai: è applicata <b>dopo</b>')}`;
+
+const T_PROB = `<b>Probabilità calibrata (finale)</b><br>
+  Stima che la scommessa vada a segno, dopo tutti gli switch attivi.<br>
+  Corrisponde alla frequenza reale misurata nel backtest.`;
+
+const T_FAIR = `<b>Quota fair</b> = 1 / probabilità<br>
+  La quota minima a cui scommettere per avere <b>edge positivo</b>.<br>
+  Se il bookmaker offre una quota <b>superiore</b> a questo valore, hai un vantaggio teorico.`;
+
+const T_LAM_B = `<b>Lambda (gol attesi)</b><br>
+  ${trow('λ Casa','gol attesi dalla squadra di casa')}
+  ${trow('λ Osp','gol attesi dall\'ospite')}
+  Con λ_casa = 3.2, la prob. di 0 gol è e^(-3.2) ≈ 4%.`;
+
+const T_LAM_C = `<b>Lambda (gol attesi)</b><br>
+  ${trow('λ Osp','gol attesi dall\'ospite — target della scommessa')}
+  ${trow('λ Casa','gol attesi dalla squadra di casa')}
+  Under 1.5 = P(0 gol) + P(1 gol) dalla distribuzione di Poisson.`;
+
+const T_ATT_B = (hA, aD) => `<b>Parametri attacco/difesa</b><br>
+  ${trow('ATT casa','gol segnati in casa per partita (pesato con decay) = ' + hA)}
+  ${trow('DEF osp','gol subiti in trasferta per partita = ' + aD)}<br>
+  λ_casa = (ATT × DEF) / media_lega × fattore_campo`;
+
+const T_ATT_C = (aA, hD) => `<b>Parametri attacco/difesa</b><br>
+  ${trow('ATT osp','gol segnati in trasferta per partita (pesato) = ' + aA)}
+  ${trow('DEF casa','gol subiti in casa per partita = ' + hD)}<br>
+  λ_osp = (ATT × DEF) / media_lega / fattore_campo`;
+
+const T_HF = (v) => `<b>Fattore campo</b> = ${v}<br>
+  Rapporto gol casa/trasferta della squadra vs media lega.<br>
+  &gt;1 = vantaggio casa sopra media · &lt;1 = sotto media.<br>
+  Con shrinkage adattivo: pochi dati → vicino a 1.0.`;
+
+const T_RHO = (v) => `<b>ρ Dixon-Coles</b> = ${v}<br>
+  Corregge la matrice di Poisson per i punteggi bassi:<br>
+  ${trow('0-0','meno frequente del previsto se ρ > 0')}
+  ${trow('1-1','corretto per correlazione tra i gol')}
+  Range: −0.25 / +0.05. Con λ alti ha impatto minimo.`;
+
+const T_ELO = (eh, ea, lh, la) => `<b>Rating Elo</b> — solo informativo, non influenza la probabilità<br><br>
+  ${trow(lh, eh + ' pt')}
+  ${trow(la, ea + ' pt')}<br>
+  Parte da 1500 a inizio stagione, K=20.<br>
+  Diventa significativo dopo 8-10 giornate.<br>
+  Usa come <b>sanity check</b>: se prob alta ma Elo ospite ★★★ e casa ▼, ragionaci.`;
+
+// ── Card builders ────────────────────────────────────────────────────────────
+function makeCard(id, content) {
+  // Attach tooltips after card is in DOM — chiamato da recalc dopo innerHTML
+  return `<div class="match-card" id="${id}">${content}</div>`;
+}
+
+function attachCardTips(id, p, isB) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const qs = s => el.querySelector(s);
+  const qa = s => el.querySelectorAll(s);
+  const stats = qa('.detail-stat');
+
+  if (qs('.pct'))     tip(qs('.pct'), T_PROB);
+  if (qs('.fair-tip')) tip(qs('.fair-tip'), T_FAIR);
+  if (qs('.precal-tip')) tip(qs('.precal-tip'), T_PRECAL);
+  if (stats[0]) tip(stats[0], isB ? T_LAM_B : T_LAM_C);
+  if (stats[1]) tip(stats[1], isB ? T_ATT_B(p.hA, p.aD) : T_ATT_C(p.aA, p.hD));
+  if (stats[2]) tip(stats[2], T_HF(p.hf||'—'));
+  if (stats[3]) tip(stats[3], T_RHO(p.rho||'—'));
+  if (qs('.elo-row')) tip(qs('.elo-row'), T_ELO(p.elo_h||1500, p.elo_a||1500, p.h, p.a));
+}
+
 function crdB(i, p) {
   const dt = p.date ? `<div class="match-date">📅 ${fmtDate(p.date)}</div>` : '';
-  const rawTip = p.prob_raw ? ` <span style="font-size:.65rem;color:var(--text2)">(raw ${(p.prob_raw*100).toFixed(1)}%)</span>` : '';
   const fairOdds = (1 / p.prob).toFixed(2);
-  return `<div class="match-card"><div class="rank">#${i+1}</div>
+  const precal = p.prob_raw
+    ? `<span class="precal-tip tipwrap" style="font-size:.65rem;color:var(--text2)">(pre-cal ${(p.prob_raw*100).toFixed(1)}%)</span>`
+    : '';
+  const uid = `cB_${i}`;
+  const inner = `<div class="rank">#${i+1}</div>
     ${dt}<div class="teams">${p.h} <span class="vs">vs</span> ${p.a}</div>
     <div class="prob-container"><div class="prob-label">
       <span class="type">CASA OVER 0.5</span>
-      <span class="pct" style="color:${pcol(p.prob)}">${(p.prob*100).toFixed(1)}% <span style="font-size:.72rem;color:var(--text2);font-weight:400">@fair <b style="color:${pcol(p.prob)}">${fairOdds}</b></span>${rawTip}</span></div>
+      <span class="pct" style="color:${pcol(p.prob)};cursor:help">${(p.prob*100).toFixed(1)}%
+        <span class="fair-tip tipwrap" style="font-size:.72rem;color:var(--text2);font-weight:400">@fair <b style="color:${pcol(p.prob)}">${fairOdds}</b></span>
+        ${precal}</span></div>
       <div class="prob-bar"><div class="prob-fill ${pc(p.prob)}" style="width:${p.prob*100}%"></div></div></div>
     <div class="detail-stats">
-      <div class="detail-stat"><div class="dl">λ Casa / Osp</div><div class="dv">${p.lam} / ${p.lam_a||'—'}</div></div>
-      <div class="detail-stat"><div class="dl">Att / Def</div><div class="dv">${p.hA} / ${p.aD}</div></div>
-      <div class="detail-stat"><div class="dl">🏟️ Campo</div><div class="dv">${p.hf||'—'}</div></div>
-      <div class="detail-stat"><div class="dl">ρ D-C</div><div class="dv">${p.rho||'—'}</div></div>
+      <div class="detail-stat" style="cursor:help"><div class="dl">λ Casa / Osp</div><div class="dv">${p.lam} / ${p.lam_a||'—'}</div></div>
+      <div class="detail-stat" style="cursor:help"><div class="dl">Att / Def</div><div class="dv">${p.hA} / ${p.aD}</div></div>
+      <div class="detail-stat" style="cursor:help"><div class="dl">🏟️ Campo</div><div class="dv">${p.hf||'—'}</div></div>
+      <div class="detail-stat" style="cursor:help"><div class="dl">ρ D-C</div><div class="dv">${p.rho||'—'}</div></div>
     </div>
-    ${eloBlock(p)}</div>`;
+    ${eloBlock(p)}`;
+  return `<div class="match-card" id="${uid}">${inner}</div>`;
 }
 
 function crdC(i, p) {
   const dt = p.date ? `<div class="match-date">📅 ${fmtDate(p.date)}</div>` : '';
-  const rawTip = p.prob_raw ? ` <span style="font-size:.65rem;color:var(--text2)">(raw ${(p.prob_raw*100).toFixed(1)}%)</span>` : '';
   const fairOdds = (1 / p.prob).toFixed(2);
-  return `<div class="match-card"><div class="rank">#${i+1}</div>
+  const precal = p.prob_raw
+    ? `<span class="precal-tip tipwrap" style="font-size:.65rem;color:var(--text2)">(pre-cal ${(p.prob_raw*100).toFixed(1)}%)</span>`
+    : '';
+  const uid = `cC_${i}`;
+  const inner = `<div class="rank">#${i+1}</div>
     ${dt}<div class="teams">${p.h} <span class="vs">vs</span> ${p.a}</div>
     <div class="prob-container"><div class="prob-label">
       <span class="type">OSPITE UNDER 1.5</span>
-      <span class="pct" style="color:${pcol(p.prob)}">${(p.prob*100).toFixed(1)}% <span style="font-size:.72rem;color:var(--text2);font-weight:400">@fair <b style="color:${pcol(p.prob)}">${fairOdds}</b></span>${rawTip}</span></div>
+      <span class="pct" style="color:${pcol(p.prob)};cursor:help">${(p.prob*100).toFixed(1)}%
+        <span class="fair-tip tipwrap" style="font-size:.72rem;color:var(--text2);font-weight:400">@fair <b style="color:${pcol(p.prob)}">${fairOdds}</b></span>
+        ${precal}</span></div>
       <div class="prob-bar"><div class="prob-fill ${pc(p.prob)}" style="width:${p.prob*100}%"></div></div></div>
     <div class="detail-stats">
-      <div class="detail-stat"><div class="dl">λ Osp / Casa</div><div class="dv">${p.lam} / ${p.lam_h||'—'}</div></div>
-      <div class="detail-stat"><div class="dl">Att / Def</div><div class="dv">${p.aA} / ${p.hD}</div></div>
-      <div class="detail-stat"><div class="dl">🏟️ Campo</div><div class="dv">${p.hf||'—'}</div></div>
-      <div class="detail-stat"><div class="dl">ρ D-C</div><div class="dv">${p.rho||'—'}</div></div>
+      <div class="detail-stat" style="cursor:help"><div class="dl">λ Osp / Casa</div><div class="dv">${p.lam} / ${p.lam_h||'—'}</div></div>
+      <div class="detail-stat" style="cursor:help"><div class="dl">Att / Def</div><div class="dv">${p.aA} / ${p.hD}</div></div>
+      <div class="detail-stat" style="cursor:help"><div class="dl">🏟️ Campo</div><div class="dv">${p.hf||'—'}</div></div>
+      <div class="detail-stat" style="cursor:help"><div class="dl">ρ D-C</div><div class="dv">${p.rho||'—'}</div></div>
     </div>
-    ${eloBlock(p)}</div>`;
+    ${eloBlock(p)}`;
+  return `<div class="match-card" id="${uid}">${inner}</div>`;
 }
 
 // ── Recalc ─────────────────────────────────────────────────────────────────────
@@ -1776,6 +1930,7 @@ async function recalc() {
   document.getElementById('cardsB').innerHTML = d.serieB.predictions.length
     ? d.serieB.predictions.map((p,i) => crdB(i,p)).join('')
     : '<div class="empty">Nessun dato — premi 🔄 per scaricare</div>';
+  d.serieB.predictions.forEach((p,i) => attachCardTips(`cB_${i}`, p, true));
 
   // Serie C gironi
   ['A','B','C'].forEach(gir => {
@@ -1787,6 +1942,7 @@ async function recalc() {
     document.getElementById('cardsC'+s).innerHTML = gd.predictions.length
       ? gd.predictions.map((p,i) => crdC(i,p)).join('')
       : '<div class="empty">Nessun dato — premi 🔄 per scaricare</div>';
+    gd.predictions.forEach((p,i) => attachCardTips(`cC_${i}`, p, false));
   });
 }
 
@@ -1888,6 +2044,63 @@ function switchTab(tab, el) {
 setSource('calciomagazine');
 updateStatus();
 recalc();
+
+// Tooltip su bottoni principali e toggle modello
+tip(document.getElementById('scrapeBtn'),
+  `<b>Aggiorna dati</b><br>Scarica risultati e calendario dalla fonte selezionata.<br>Sovrascrive i dati locali solo se la pagina restituisce dati validi.`);
+
+tip(document.querySelector('.btn-g'),
+  `<b>Esporta JSON</b><br>Salva il database locale (risultati + fixture) come file .json.<br>Utile per backup o trasferimento tra dispositivi.`);
+
+tip(document.querySelector('.btn-s'),
+  `<b>Importa JSON</b><br>Carica un backup precedentemente esportato.<br>Sovrascrive tutti i dati correnti.`);
+
+tip(document.querySelector('.btn-d'),
+  `<b>Reset</b><br>Cancella tutti i dati locali e ripristina il database vuoto.`);
+
+tip(document.getElementById('togPoisson'),
+  `<b>📊 Poisson Base</b> — sempre attivo<br>
+  Stima i gol attesi (lambda) per ogni squadra:<br><br>
+  ${trow('λ casa','(Att_casa × Def_osp) / media_lega')}
+  ${trow('λ ospite','(Att_osp × Def_casa) / media_lega')}<br>
+  Da λ si ricava la probabilità tramite la distribuzione di Poisson.<br>
+  Tutti gli altri layer modificano λ prima del calcolo finale.`);
+
+tip(document.getElementById('togDecay'),
+  `<b>⏱️ Decadimento temporale</b><br>
+  Peso esponenziale: le partite recenti contano di più.<br>
+  <code>w = e^(−0.010 × giorni_fa)</code> → emivita ~70 giorni.<br><br>
+  Include anche il <b>prior stagionale</b>: squadre con &lt;8 partite vengono avvicinate alla media lega per evitare stime estreme.`);
+
+tip(document.getElementById('togHF'),
+  `<b>🏟️ Fattore campo</b><br>
+  Moltiplicatore sui lambda basato sul rendimento casa/trasferta di ogni squadra rispetto alla media lega.<br>
+  Con shrinkage adattivo: pochi dati → fattore vicino a 1.0.<br>
+  Formula: <code>α = min(partite/20, 1) × 0.65</code>`);
+
+tip(document.getElementById('togDC'),
+  `<b>📐 Dixon-Coles</b><br>
+  Corregge la matrice di Poisson per i punteggi bassi (0-0, 1-0, 0-1, 1-1) dove la distribuzione indipendente è inaccurata.<br>
+  Il parametro <b>ρ</b> viene stimato dai dati osservati (range: −0.25/+0.05).<br>
+  Con λ alti (&gt;2.5) l'impatto è &lt;0.1pp.`);
+
+tip(document.getElementById('togCalib'),
+  `<b>🎯 Calibrazione (Temperature Scaling)</b><br>
+  Riduce l'overconfidence sistematica emersa dal backtest.<br>
+  Formula: <code>p_cal = sigmoid(logit(p) / T)</code> con T=1.30<br><br>
+  ${trow('90% raw','→ ~84% calibrato')}
+  ${trow('80% raw','→ ~74% calibrato')}
+  ${trow('50% raw','→ 50% invariato')}`);
+
+// Tooltip sulle sorgenti dati
+document.querySelectorAll('.src-btn').forEach(btn => {
+  const src = btn.dataset.src;
+  const tips = {
+    'calciomagazine': `<b>calciomagazine.net</b><br>Due richieste per campionato: risultati + calendario separati.<br>Parser regex su testo grezzo. Fonte più stabile per i calendari.`,
+    'wikipedia': `<b>Wikipedia (it.)</b><br>Due richieste totali per Serie B e Serie C.<br>Parser BeautifulSoup su tabelle HTML. Formato andata/ritorno combinato per la Serie C.`
+  };
+  if (tips[src]) tip(btn, tips[src]);
+});
 </script>
 </body>
 </html>"""

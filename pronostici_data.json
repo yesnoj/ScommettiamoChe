@@ -1,7 +1,7 @@
 {
  "version": 10,
  "source": "wikipedia",
- "updatedAt": "2026-02-26",
+ "updatedAt": "2026-03-01",
  "serieB": {
   "results_by_giornata": {
    "1": [
@@ -1876,7 +1876,50 @@
      "ag": 3
     }
    ],
-   "27": [],
+   "27": [
+    {
+     "date": "2026-02-28",
+     "home": "Empoli",
+     "away": "Cesena",
+     "hg": 1,
+     "ag": 1
+    },
+    {
+     "date": "2026-02-28",
+     "home": "Modena",
+     "away": "Padova",
+     "hg": 1,
+     "ag": 2
+    },
+    {
+     "date": "2026-02-27",
+     "home": "Monza",
+     "away": "Virtus Entella",
+     "hg": 2,
+     "ag": 0
+    },
+    {
+     "date": "2026-02-27",
+     "home": "Sampdoria",
+     "away": "Bari",
+     "hg": 0,
+     "ag": 2
+    },
+    {
+     "date": "2026-02-28",
+     "home": "Spezia",
+     "away": "Reggiana",
+     "hg": 0,
+     "ag": 1
+    },
+    {
+     "date": "2026-02-28",
+     "home": "Südtirol",
+     "away": "Venezia",
+     "hg": 1,
+     "ag": 1
+    }
+   ],
    "28": [],
    "29": [],
    "30": [],
@@ -3710,59 +3753,101 @@
     "away": "Catanzaro",
     "hg": 1,
     "ag": 3
-   }
-  ],
-  "next_giornata": 27,
-  "next_fixtures": [
-   {
-    "date": "2026-02-28",
-    "home": "Avellino",
-    "away": "Juve Stabia"
-   },
-   {
-    "date": "2026-03-01",
-    "home": "Catanzaro",
-    "away": "Frosinone"
    },
    {
     "date": "2026-02-28",
     "home": "Empoli",
-    "away": "Cesena"
-   },
-   {
-    "date": "2026-03-01",
-    "home": "Mantova",
-    "away": "Carrarese"
+    "away": "Cesena",
+    "hg": 1,
+    "ag": 1
    },
    {
     "date": "2026-02-28",
     "home": "Modena",
-    "away": "Padova"
+    "away": "Padova",
+    "hg": 1,
+    "ag": 2
    },
    {
     "date": "2026-02-27",
     "home": "Monza",
-    "away": "Virtus Entella"
-   },
-   {
-    "date": "2026-03-01",
-    "home": "Pescara",
-    "away": "Palermo"
+    "away": "Virtus Entella",
+    "hg": 2,
+    "ag": 0
    },
    {
     "date": "2026-02-27",
     "home": "Sampdoria",
-    "away": "Bari"
+    "away": "Bari",
+    "hg": 0,
+    "ag": 2
    },
    {
     "date": "2026-02-28",
     "home": "Spezia",
-    "away": "Reggiana"
+    "away": "Reggiana",
+    "hg": 0,
+    "ag": 1
    },
    {
     "date": "2026-02-28",
     "home": "Südtirol",
-    "away": "Venezia"
+    "away": "Venezia",
+    "hg": 1,
+    "ag": 1
+   }
+  ],
+  "next_giornata": 28,
+  "next_fixtures": [
+   {
+    "date": "2026-03-04",
+    "home": "Bari",
+    "away": "Empoli"
+   },
+   {
+    "date": "2026-03-04",
+    "home": "Carrarese",
+    "away": "Catanzaro"
+   },
+   {
+    "date": "2026-03-03",
+    "home": "Cesena",
+    "away": "Monza"
+   },
+   {
+    "date": "2026-03-04",
+    "home": "Frosinone",
+    "away": "Pescara"
+   },
+   {
+    "date": "2026-03-04",
+    "home": "Juve Stabia",
+    "away": "Sampdoria"
+   },
+   {
+    "date": "2026-03-03",
+    "home": "Padova",
+    "away": "Spezia"
+   },
+   {
+    "date": "2026-03-04",
+    "home": "Palermo",
+    "away": "Mantova"
+   },
+   {
+    "date": "2026-03-03",
+    "home": "Reggiana",
+    "away": "Südtirol"
+   },
+   {
+    "date": "2026-03-03",
+    "home": "Venezia",
+    "away": "Avellino"
+   },
+   {
+    "date": "2026-03-03",
+    "home": "Virtus Entella",
+    "away": "Modena"
    }
   ]
  },
@@ -5136,7 +5221,78 @@
      "ag": 1
     }
    ],
-   "29": [],
+   "29": [
+    {
+     "date": "2026-03-01",
+     "home": "Inter U23",
+     "away": "Alcione",
+     "hg": 0,
+     "ag": 0
+    },
+    {
+     "date": "2026-03-01",
+     "home": "AlbinoLeffe",
+     "away": "L.R. Vicenza",
+     "hg": 1,
+     "ag": 0
+    },
+    {
+     "date": "2026-03-01",
+     "home": "Union Brescia",
+     "away": "Lecco",
+     "hg": 1,
+     "ag": 3
+    },
+    {
+     "date": "2026-03-01",
+     "home": "Trento",
+     "away": "Lumezzane",
+     "hg": 1,
+     "ag": 1
+    },
+    {
+     "date": "2026-03-01",
+     "home": "Arzignano Valchiampo",
+     "away": "Novara",
+     "hg": 1,
+     "ag": 1
+    },
+    {
+     "date": "2026-03-01",
+     "home": "Cittadella",
+     "away": "Ospitaletto",
+     "hg": 2,
+     "ag": 2
+    },
+    {
+     "date": "2026-03-01",
+     "home": "Giana Erminio",
+     "away": "Pro Vercelli",
+     "hg": 0,
+     "ag": 1
+    },
+    {
+     "date": "2026-03-01",
+     "home": "Dolomiti Bellunesi",
+     "away": "Renate",
+     "hg": 3,
+     "ag": 0
+    },
+    {
+     "date": "2026-03-01",
+     "home": "Pergolettese",
+     "away": "Triestina",
+     "hg": 0,
+     "ag": 2
+    },
+    {
+     "date": "2026-03-01",
+     "home": "Pro Patria",
+     "away": "Virtus Verona",
+     "hg": 2,
+     "ag": 2
+    }
+   ],
    "11": [
     {
      "date": "2025-10-25",
@@ -7128,6 +7284,76 @@
     "ag": 1
    },
    {
+    "date": "2026-03-01",
+    "home": "Inter U23",
+    "away": "Alcione",
+    "hg": 0,
+    "ag": 0
+   },
+   {
+    "date": "2026-03-01",
+    "home": "AlbinoLeffe",
+    "away": "L.R. Vicenza",
+    "hg": 1,
+    "ag": 0
+   },
+   {
+    "date": "2026-03-01",
+    "home": "Union Brescia",
+    "away": "Lecco",
+    "hg": 1,
+    "ag": 3
+   },
+   {
+    "date": "2026-03-01",
+    "home": "Trento",
+    "away": "Lumezzane",
+    "hg": 1,
+    "ag": 1
+   },
+   {
+    "date": "2026-03-01",
+    "home": "Arzignano Valchiampo",
+    "away": "Novara",
+    "hg": 1,
+    "ag": 1
+   },
+   {
+    "date": "2026-03-01",
+    "home": "Cittadella",
+    "away": "Ospitaletto",
+    "hg": 2,
+    "ag": 2
+   },
+   {
+    "date": "2026-03-01",
+    "home": "Giana Erminio",
+    "away": "Pro Vercelli",
+    "hg": 0,
+    "ag": 1
+   },
+   {
+    "date": "2026-03-01",
+    "home": "Dolomiti Bellunesi",
+    "away": "Renate",
+    "hg": 3,
+    "ag": 0
+   },
+   {
+    "date": "2026-03-01",
+    "home": "Pergolettese",
+    "away": "Triestina",
+    "hg": 0,
+    "ag": 2
+   },
+   {
+    "date": "2026-03-01",
+    "home": "Pro Patria",
+    "away": "Virtus Verona",
+    "hg": 2,
+    "ag": 2
+   },
+   {
     "date": "2025-10-25",
     "home": "Arzignano Valchiampo",
     "away": "Lumezzane",
@@ -7758,57 +7984,57 @@
     "ag": 0
    }
   ],
-  "next_giornata": 29,
+  "next_giornata": 30,
   "next_fixtures": [
    {
-    "date": "2026-03-01",
-    "home": "Inter U23",
-    "away": "Alcione"
+    "date": "2026-03-04",
+    "home": "Lumezzane",
+    "away": "Arzignano Valchiampo"
    },
    {
-    "date": "2026-03-01",
-    "home": "AlbinoLeffe",
-    "away": "L.R. Vicenza"
+    "date": "2026-03-04",
+    "home": "Triestina",
+    "away": "Dolomiti Bellunesi"
    },
    {
-    "date": "2026-03-01",
-    "home": "Union Brescia",
-    "away": "Lecco"
+    "date": "2026-03-04",
+    "home": "Alcione",
+    "away": "Giana Erminio"
    },
    {
-    "date": "2026-03-01",
-    "home": "Trento",
-    "away": "Lumezzane"
+    "date": "2026-03-04",
+    "home": "Cittadella",
+    "away": "Inter U23"
    },
    {
-    "date": "2026-03-01",
-    "home": "Arzignano Valchiampo",
+    "date": "2026-03-04",
+    "home": "Virtus Verona",
     "away": "Novara"
    },
    {
-    "date": "2026-03-01",
-    "home": "Cittadella",
-    "away": "Ospitaletto"
+    "date": "2026-03-04",
+    "home": "Ospitaletto",
+    "away": "Pro Patria"
    },
    {
-    "date": "2026-03-01",
-    "home": "Giana Erminio",
+    "date": "2026-03-04",
+    "home": "Pergolettese",
     "away": "Pro Vercelli"
    },
    {
-    "date": "2026-03-01",
-    "home": "Dolomiti Bellunesi",
+    "date": "2026-03-04",
+    "home": "Lecco",
     "away": "Renate"
    },
    {
-    "date": "2026-03-01",
-    "home": "Pergolettese",
-    "away": "Triestina"
+    "date": "2026-03-04",
+    "home": "L.R. Vicenza",
+    "away": "Trento"
    },
    {
-    "date": "2026-03-01",
-    "home": "Pro Patria",
-    "away": "Virtus Verona"
+    "date": "2026-03-04",
+    "home": "AlbinoLeffe",
+    "away": "Union Brescia"
    }
   ]
  },
@@ -9049,7 +9275,36 @@
      "ag": 2
     }
    ],
-   "29": [],
+   "29": [
+    {
+     "date": "2026-02-28",
+     "home": "Ascoli",
+     "away": "Carpi",
+     "hg": 0,
+     "ag": 3
+    },
+    {
+     "date": "2026-02-28",
+     "home": "Sambenedettese",
+     "away": "Livorno",
+     "hg": 0,
+     "ag": 0
+    },
+    {
+     "date": "2026-02-28",
+     "home": "Perugia",
+     "away": "Pineto",
+     "hg": 1,
+     "ag": 0
+    },
+    {
+     "date": "2026-02-28",
+     "home": "Forlì",
+     "away": "Torres",
+     "hg": 0,
+     "ag": 2
+    }
+   ],
    "11": [
     {
      "date": "2025-10-26",
@@ -10845,6 +11100,34 @@
     "ag": 2
    },
    {
+    "date": "2026-02-28",
+    "home": "Ascoli",
+    "away": "Carpi",
+    "hg": 0,
+    "ag": 3
+   },
+   {
+    "date": "2026-02-28",
+    "home": "Sambenedettese",
+    "away": "Livorno",
+    "hg": 0,
+    "ag": 0
+   },
+   {
+    "date": "2026-02-28",
+    "home": "Perugia",
+    "away": "Pineto",
+    "hg": 1,
+    "ag": 0
+   },
+   {
+    "date": "2026-02-28",
+    "home": "Forlì",
+    "away": "Torres",
+    "hg": 0,
+    "ag": 2
+   },
+   {
     "date": "2025-10-26",
     "home": "Ascoli",
     "away": "Sambenedettese",
@@ -11420,29 +11703,14 @@
     "away": "Campobasso"
    },
    {
-    "date": "2026-02-28",
-    "home": "Ascoli",
-    "away": "Carpi"
-   },
-   {
     "date": "2026-03-01",
     "home": "Guidonia Montecelio",
     "away": "Gubbio"
    },
    {
-    "date": "2026-02-28",
-    "home": "Sambenedettese",
-    "away": "Livorno"
-   },
-   {
     "date": "2026-03-01",
     "home": "Bra",
     "away": "Pianese"
-   },
-   {
-    "date": "2026-02-28",
-    "home": "Perugia",
-    "away": "Pineto"
    },
    {
     "date": "2026-03-01",
@@ -11453,11 +11721,6 @@
     "date": "2026-03-01",
     "home": "Arezzo",
     "away": "Ravenna"
-   },
-   {
-    "date": "2026-02-28",
-    "home": "Forlì",
-    "away": "Torres"
    }
   ]
  },
@@ -12318,6 +12581,13 @@
      "away": "Sorrento",
      "hg": 0,
      "ag": 2
+    },
+    {
+     "date": "2026-02-18",
+     "home": "Catania",
+     "away": "Trapani",
+     "hg": 0,
+     "ag": 4
     }
    ],
    "7": [
@@ -12824,7 +13094,36 @@
      "ag": 1
     }
    ],
-   "29": [],
+   "29": [
+    {
+     "date": "2026-03-01",
+     "home": "Trapani",
+     "away": "Atalanta U23",
+     "hg": 2,
+     "ag": 0
+    },
+    {
+     "date": "2026-03-01",
+     "home": "Cavese",
+     "away": "Audace Cerignola",
+     "hg": 0,
+     "ag": 2
+    },
+    {
+     "date": "2026-03-01",
+     "home": "Foggia",
+     "away": "Casarano",
+     "hg": 2,
+     "ag": 1
+    },
+    {
+     "date": "2026-03-01",
+     "home": "AZ Picerno",
+     "away": "Team Altamura",
+     "hg": 0,
+     "ag": 0
+    }
+   ],
    "11": [
     {
      "date": "2025-10-25",
@@ -14319,6 +14618,13 @@
     "ag": 2
    },
    {
+    "date": "2026-02-18",
+    "home": "Catania",
+    "away": "Trapani",
+    "hg": 0,
+    "ag": 4
+   },
+   {
     "date": "2025-09-28",
     "home": "Audace Cerignola",
     "away": "Catania",
@@ -14807,6 +15113,34 @@
     "away": "AZ Picerno",
     "hg": 3,
     "ag": 1
+   },
+   {
+    "date": "2026-03-01",
+    "home": "Trapani",
+    "away": "Atalanta U23",
+    "hg": 2,
+    "ag": 0
+   },
+   {
+    "date": "2026-03-01",
+    "home": "Cavese",
+    "away": "Audace Cerignola",
+    "hg": 0,
+    "ag": 2
+   },
+   {
+    "date": "2026-03-01",
+    "home": "Foggia",
+    "away": "Casarano",
+    "hg": 2,
+    "ag": 1
+   },
+   {
+    "date": "2026-03-01",
+    "home": "AZ Picerno",
+    "away": "Team Altamura",
+    "hg": 0,
+    "ag": 0
    },
    {
     "date": "2025-10-25",
@@ -15443,23 +15777,8 @@
   "next_fixtures": [
    {
     "date": "2026-03-01",
-    "home": "Trapani",
-    "away": "Atalanta U23"
-   },
-   {
-    "date": "2026-03-01",
-    "home": "Cavese",
-    "away": "Audace Cerignola"
-   },
-   {
-    "date": "2026-03-01",
     "home": "Potenza",
     "away": "Benevento"
-   },
-   {
-    "date": "2026-03-01",
-    "home": "Foggia",
-    "away": "Casarano"
    },
    {
     "date": "2026-03-01",
@@ -15485,11 +15804,6 @@
     "date": "2026-03-01",
     "home": "Cosenza",
     "away": "Sorrento"
-   },
-   {
-    "date": "2026-03-01",
-    "home": "AZ Picerno",
-    "away": "Team Altamura"
    }
   ]
  }

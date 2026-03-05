@@ -11,7 +11,6 @@ Miglioramenti v10:
 Fonti dati selezionabili:
   • calciomagazine.net  (parser testo)
   • Wikipedia it.       (parser HTML/BeautifulSoup)
-  • Tuttosport          (parser HTML/BeautifulSoup, img-alt strategy)
 """
 
 import json, re, os, math, sys
@@ -94,20 +93,6 @@ MESI_IT = {
     "lug":7,"ago":8,"set":9,"ott":10,"nov":11,"dic":12,
 }
 
-# ── Fonti Tuttosport ───────────────────────────────────────────
-TS_LEAGUES = {
-    "serieB":  "https://www.tuttosport.com/live/calendario-serie-b",
-    "serieCa": "https://www.tuttosport.com/live/calendario-serie-c-girone-a",
-    "serieCb": "https://www.tuttosport.com/live/calendario-serie-c-girone-b",
-    "serieCc": "https://www.tuttosport.com/live/calendario-serie-c-girone-c",
-}
-
-TS_LEAGUE_NAMES = {
-    "serieB":  "Serie B",
-    "serieCa": "Serie C Girone A",
-    "serieCb": "Serie C Girone B",
-    "serieCc": "Serie C Girone C",
-}
 
 # ============================================================
 # RETE — fetch comune
@@ -502,12 +487,16 @@ def wiki_parse_serie_c_girone(soup, girone_letter):
                     giornate[cur_g_a]["fixtures"].append({"date": date_a, "home": home, "away": away})
                     seen_fix.add(key)
             # Ritorno (casa/trasferta invertite)
+            # Wikipedia mostra sempre lo score nell'ordine Squadra_A - Squadra_B dell'andata,
+            # quindi sc[0] = gol di 'home' (che nel ritorno gioca in trasferta)
+            #          sc[1] = gol di 'away' (che nel ritorno gioca in casa)
+            # → hg e ag vanno invertiti rispetto a come appaiono nella colonna.
             sc = _parse_score(score_r)
             if sc:
                 key = (date_r, away, home)
                 if key not in seen_res:
                     giornate[cur_g_r]["results"].append(
-                        {"date": date_r, "home": away, "away": home, "hg": sc[0], "ag": sc[1]}
+                        {"date": date_r, "home": away, "away": home, "hg": sc[1], "ag": sc[0]}
                     )
                     seen_res.add(key)
             elif _is_time_or_dash(score_r):
@@ -585,197 +574,6 @@ def scrape_wikipedia(data):
                 log.append(f"Serie C Gir.{gl}: {nr} risultati in {ng} giornate → prossima: {nxg}ª ({nf} partite)")
             else:
                 log.append(f"Serie C Gir.{gl}: ⚠️ nessun risultato")
-    return errors, log
-
-
-# ============================================================
-# PARSER — Tuttosport
-# ============================================================
-# Page structure observed:
-#   Serie B  → explicit round number: "Serie B 27a giornata"
-#   Serie C  → no round number: "Serie C girone c" repeated per round
-#              (rounds counted sequentially by header occurrences)
-#   Dates    → "venerdì 22.08.2025"  (DD.MM.YYYY)  — Serie B
-#           OR "domenica 2025.08.24" (YYYY.MM.DD)  — Serie C
-#   Matches  → <a href="/live/partita/...">
-#                 <img alt="HomeTeam"> ... score/time ... <img alt="AwayTeam">
-#              </a>
-#   Score    → "G - G"    (played)
-#   Fixture  → "HH:MM"    (upcoming) or absent text (TBD)
-# ============================================================
-
-_TS_WEEKDAY = re.compile(
-    r"(?:luned[iì]|marted[iì]|mercoled[iì]|gioved[iì]|venerd[iì]|sabato|domenica)",
-    re.I,
-)
-_TS_PARTITA = re.compile(r"/live/partita/")
-
-
-def _ts_parse_date(text):
-    """Parse DD.MM.YYYY or YYYY.MM.DD → ISO date string."""
-    m = re.search(r"(\d{2})\.(\d{2})\.(\d{4})", text)
-    if m:
-        try:
-            return date(int(m.group(3)), int(m.group(2)), int(m.group(1))).isoformat()
-        except ValueError:
-            pass
-    m = re.search(r"(\d{4})\.(\d{2})\.(\d{2})", text)
-    if m:
-        try:
-            return date(int(m.group(1)), int(m.group(2)), int(m.group(3))).isoformat()
-        except ValueError:
-            pass
-    return ""
-
-
-def ts_parse_calendar(html, league_key):
-    """
-    Parse a single Tuttosport calendar page.
-
-    Parameters
-    ----------
-    html       : raw HTML string from fetch_page()
-    league_key : 'serieB' | 'serieCa' | 'serieCb' | 'serieCc'
-
-    Returns
-    -------
-    dict  {giornata_num (int): {'results': [...], 'fixtures': [...]}}
-    """
-    is_serie_b = (league_key == "serieB")
-    # Girone letter for Serie C matching ("a", "b", "c")
-    girone_letter = "" if is_serie_b else league_key[-1]  # 'a', 'b' or 'c'
-
-    soup = BeautifulSoup(html, "html.parser")
-    giornate: dict = {}
-    current_g    = 0
-    current_date = ""
-    g_counter    = 0
-
-    # For Serie C: track which DOM nodes already triggered a round increment
-    # to avoid double-counting parent + child nodes with the same short text.
-    _seen_round_el_ids: set = set()
-    _seen_match_el_ids: set = set()
-
-    # Regex for round header (Serie B)
-    _sb_round_re = re.compile(r"(\d+)[a-z°ª]+\s*giornata", re.I)
-    # Regex for Serie C round header
-    _sc_round_re = re.compile(
-        r"serie\s*c\s*(?:girone\s*)?" + re.escape(girone_letter), re.I
-    )
-
-    for el in soup.descendants:
-        # Skip NavigableString (plain text nodes) — only process Tag objects
-        if not hasattr(el, "name") or el.name is None:
-            continue
-
-        # ── A) Match link ─────────────────────────────────────────────
-        if el.name == "a" and _TS_PARTITA.search(el.get("href", "")):
-            el_id = id(el)
-            if el_id in _seen_match_el_ids:
-                continue
-            _seen_match_el_ids.add(el_id)
-
-            if current_g == 0:
-                continue
-
-            imgs = el.find_all("img")
-            if len(imgs) < 2:
-                continue
-
-            home = imgs[0].get("alt", "").strip()
-            away = imgs[-1].get("alt", "").strip()
-            if not home or not away or home == away:
-                continue
-
-            # Extract middle text (score or time) — join all text nodes in link
-            # excluding the team-name strings
-            link_text = el.get_text(separator="§")
-            parts     = [p.strip() for p in link_text.split("§") if p.strip()]
-            mid_parts = [p for p in parts if p != home and p != away]
-            mid       = " ".join(mid_parts).strip()
-
-            g_data = giornate.setdefault(current_g, {"results": [], "fixtures": []})
-
-            sc = re.match(r"^(\d+)\s*-\s*(\d+)$", mid)
-            if sc:
-                hg, ag = int(sc.group(1)), int(sc.group(2))
-                if not any(r["home"] == home and r["away"] == away for r in g_data["results"]):
-                    g_data["results"].append({
-                        "date": current_date, "home": home, "away": away,
-                        "hg": hg, "ag": ag,
-                    })
-            else:
-                # Upcoming fixture (time "HH:MM", "-", or empty)
-                if not any(f["home"] == home and f["away"] == away for f in g_data["fixtures"]):
-                    g_data["fixtures"].append({
-                        "date": current_date, "home": home, "away": away,
-                    })
-            continue   # don't re-process as header/date
-
-        # Skip elements that are inside a match link (already handled above)
-        if el.find_parent("a", href=_TS_PARTITA):
-            continue
-
-        txt = el.get_text(strip=True)
-        if not txt:
-            continue
-
-        # ── B) Round header ───────────────────────────────────────────
-        if is_serie_b:
-            gm = _sb_round_re.search(txt)
-            if gm and re.search(r"serie\s*b", txt, re.I) and len(txt) <= 80:
-                new_g = int(gm.group(1))
-                if new_g != current_g:
-                    current_g = new_g
-                    giornate.setdefault(current_g, {"results": [], "fixtures": []})
-        else:
-            # Serie C: count each new "Serie C girone X" header block once
-            if _sc_round_re.search(txt) and len(txt) <= 50:
-                # Avoid double-counting parent + child carrying identical text
-                if not any(id(p) in _seen_round_el_ids for p in el.parents):
-                    _seen_round_el_ids.add(id(el))
-                    g_counter += 1
-                    current_g = g_counter
-                    giornate.setdefault(current_g, {"results": [], "fixtures": []})
-
-        # ── C) Date ───────────────────────────────────────────────────
-        if _TS_WEEKDAY.search(txt) and len(txt) <= 60:
-            d_str = _ts_parse_date(txt)
-            if d_str:
-                current_date = d_str
-
-    return giornate
-
-
-def scrape_tuttosport(data):
-    """Scarica tutti i campionati da Tuttosport e aggiorna data."""
-    errors: list = []
-    log:    list = []
-
-    for key, url in TS_LEAGUES.items():
-        name = TS_LEAGUE_NAMES[key]
-        print(f"📥 {name} da Tuttosport...")
-        html = fetch_page(url)
-        if html is None:
-            errors.append(f"Errore download {name}")
-            log.append(f"{name}: ❌ fetch fallito")
-            continue
-
-        gd = ts_parse_calendar(html, league_key=key)
-        if not gd:
-            errors.append(f"Nessun dato parsato per {name}")
-            log.append(f"{name}: ⚠️ parser non ha trovato dati")
-            continue
-
-        nr, ng, nxg, nf = _process_wiki_giornate(gd, key, data)
-        if nr > 0:
-            log.append(f"{name}: {nr} risultati in {ng} giornate → prossima: {nxg}ª ({nf} partite)")
-        else:
-            prev = len(data[key].get("results", []))
-            log.append(f"{name}: ⚠️ nessun risultato trovato (mantengo {prev} precedenti)")
-            if prev == 0:
-                errors.append(f"Nessun risultato per {name}")
-
     return errors, log
 
 
@@ -1277,8 +1075,6 @@ def api_scrape():
 
     if source == "wikipedia":
         errors, log = scrape_wikipedia(data)
-    elif source == "tuttosport":
-        errors, log = scrape_tuttosport(data)
     else:
         errors, log = scrape_calciomagazine(data)
 
@@ -1286,7 +1082,7 @@ def api_scrape():
 
     counts = {k: len(data[k].get("results",[])) for k in _LEAGUE_KEYS}
     total  = sum(counts.values())
-    src_label = {"wikipedia": "Wikipedia", "tuttosport": "Tuttosport"}.get(source, "calciomagazine.net")
+    src_label = {"wikipedia": "Wikipedia"}.get(source, "calciomagazine.net")
     msg = f"⚠️ {'; '.join(errors)}" if errors else f"✅ {total} risultati scaricati da {src_label}"
     return jsonify({
         "success": len(errors)==0,
@@ -1573,9 +1369,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="source-btn" id="srcWK" onclick="setSource('wikipedia')">
       <span class="src-dot"></span>Wikipedia (it.)
     </div>
-    <div class="source-btn" id="srcTS" onclick="setSource('tuttosport')">
-      <span class="src-dot"></span>Tuttosport
-    </div>
   </div>
   <div class="source-info" id="sourceInfo">
     📡 Fonte attiva: <b id="srcLabel">calciomagazine.net</b> — risultati e calendari separati
@@ -1715,17 +1508,13 @@ const SOURCE_META = {
     label: 'Wikipedia (it.)',
     info:  '📡 Fonte attiva: <b>Wikipedia (it.)</b> — tabella andata/ritorno combinata',
   },
-  tuttosport: {
-    label: 'Tuttosport',
-    info:  '📡 Fonte attiva: <b>Tuttosport</b> — calendario live (img-alt parser)',
-  },
 };
 
 // ── Source Selector ────────────────────────────────────────────────────────────
 function setSource(src) {
   curSource = src;
   document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
-  const ids = { calciomagazine: 'srcCM', wikipedia: 'srcWK', tuttosport: 'srcTS' };
+  const ids = { calciomagazine: 'srcCM', wikipedia: 'srcWK' };
   document.getElementById(ids[src] || 'srcCM').classList.add('active');
   document.getElementById('sourceInfo').innerHTML = SOURCE_META[src].info;
   const btn = document.getElementById('scrapeBtn');
@@ -1805,7 +1594,7 @@ async function updateStatus() {
   const dot = d.total > 0 ? 'ok' : 'empty';
   const ng  = d.next_giornata || {};
   const el  = document.getElementById('dataStatus');
-  const srcBadge = {wikipedia:'🌐 Wikipedia', tuttosport:'📰 Tuttosport'};
+  const srcBadge = {wikipedia:'🌐 Wikipedia'};
   const badge = srcBadge[d.source] || '📰 calciomagazine';
   el.innerHTML = `<span class="status-dot ${dot}"></span>
     <span class="status-text">${badge} · 📊 <b>${d.total}</b> risultati · Agg: <b>${d.updatedAt}</b>
@@ -2232,8 +2021,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGuide()
   <p>Pagine separate per risultati e calendario. Parser regex su testo grezzo. Unica fonte che estrae anche l'<b>orario</b> della partita. Due richieste HTTP per campionato.</p>
   <h3>🌐 Wikipedia (it.wikipedia.org)</h3>
   <p>Tabelle HTML delle pagine stagionali, parser BeautifulSoup. Struttura molto stabile — ottima come backup. Due richieste totali.</p>
-  <h3>📋 Tuttosport</h3>
-  <p>Pagine calendario live. Layout può cambiare senza preavviso.</p>
   <div class="guide-warn">⚠️ Tieni sempre <code>pronostici_data.json</code> nella stessa cartella dell'exe. Senza questo file l'app riparte da zero.</div>
 
   <h2 id="g-modello">🧮 Il modello statistico</h2>

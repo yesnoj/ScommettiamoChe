@@ -11,7 +11,7 @@ Il modello si basa su **distribuzione di Poisson** con correzioni avanzate (Dixo
 | Serie C Girone B | **Ospite Under 1.5** | ≥ 72% |
 | Serie C Girone C | **Ospite Under 1.5** | ≥ 72% |
 
-> Le soglie consigliate sono ricavate dal backtest walk-forward su dati reali 2025-2026 (quota simulata 1.85). Sono visibili direttamente in app sotto ogni sezione.
+> Le soglie consigliate sono ricavate dal backtest walk-forward su dati reali 2025-2026 (quota simulata 1.85).
 
 ---
 
@@ -57,7 +57,7 @@ python pronostici_app_v10.py
 - Senza pywebview → si apre il browser predefinito su `http://localhost:5050`
 - Il server Flask gira in background sulla porta **5050**
 
-> ⚠️ L'app richiede un PC o Mac con Python installato. Non è compatibile con iOS/Android (sandbox di sistema).
+> ⚠️ L'app richiede un PC o Mac con Python installato. Non è compatibile con iOS/Android.
 
 ---
 
@@ -76,6 +76,8 @@ Due richieste HTTP per campionato: risultati + calendario separati.
 
 Parser: estrazione testo grezzo → regex su pattern `DD.MM. ore HH:MM TeamA-TeamB G : G`.
 
+Unica fonte che estrae anche l'**orario della partita** (es. "20:30"), mostrato sulla card.
+
 ### 2. Wikipedia (it.)
 
 Due richieste totali (pagina Serie B + pagina Serie C).
@@ -83,7 +85,17 @@ Due richieste totali (pagina Serie B + pagina Serie C).
 - `https://it.wikipedia.org/wiki/Serie_B_2025-2026`
 - `https://it.wikipedia.org/wiki/Serie_C_2025-2026`
 
-Parser: BeautifulSoup su tabelle HTML. La Serie C usa il formato andata/ritorno combinato su un'unica riga; le squadre vengono invertite automaticamente per le gare di ritorno.
+Parser: BeautifulSoup su tabelle HTML.
+
+**Formato Serie C — andata/ritorno combinato:** ogni riga della tabella Wikipedia contiene sia il risultato dell'andata che quello del ritorno. Lo schema mostra sempre i punteggi nell'ordine `Squadra_A − Squadra_B` indipendentemente da chi gioca in casa nel ritorno. Il parser inverte correttamente `hg`/`ag` per le gare di ritorno:
+
+```
+Andata:  home=Squadra_A, away=Squadra_B  → hg=sc[0], ag=sc[1]  ✅
+Ritorno: home=Squadra_B, away=Squadra_A  → hg=sc[1], ag=sc[0]  ✅ (invertito)
+```
+
+> ⚠️ Senza questa inversione i gol segnati/subiti del ritorno verrebbero attribuiti alla squadra
+> sbagliata, alterando le statistiche di attacco e difesa con effetti diretti sui λ e sulle probabilità.
 
 ---
 
@@ -119,15 +131,13 @@ P(Ospite Under 1.5) = P(λ_ospite = 0) + P(λ_ospite = 1)
 
 #### [2] ⏱️ Decadimento temporale (Decay)
 
-Peso esponenziale decrescente nel tempo — le partite recenti pesano di più:
+Peso esponenziale decrescente — le partite recenti pesano di più:
 
 ```
 w(t) = exp(−ξ × giorni_fa)    con ξ = 0.010 (emivita ~70 giorni)
 ```
 
-Il parametro ξ = 0.010 (raddoppiato rispetto alla v9 dove era 0.005 = 139gg) tiene conto del mercato di gennaio e dell'evoluzione delle rose nel corso della stagione.
-
-Quando il Decay è attivo viene applicato anche il **prior stagionale**: le squadre con meno di 8 partite disputate vengono avvicinate alla media di lega per evitare stime estreme (problema tipico delle neopromosse):
+Quando il Decay è attivo viene applicato anche il **prior stagionale**: le squadre con meno di 8 partite vengono avvicinate alla media lega per evitare stime estreme:
 
 ```
 stat_corretta = α × stat_squadra + (1 − α) × media_lega
@@ -136,28 +146,26 @@ stat_corretta = α × stat_squadra + (1 − α) × media_lega
 
 #### [3] 🏟️ Fattore campo (HF)
 
-Rapporto gol casa/trasferta per ogni squadra rispetto alla media di lega. In v10 usa **shrinkage adattivo** proporzionale ai dati disponibili:
+Rapporto gol casa/trasferta per squadra vs media lega, con **shrinkage adattivo**:
 
 ```
 α_shrinkage = min(partite_totali / 20, 1.0) × 0.65
 HF = α_shrinkage × raw_factor + (1 − α_shrinkage)
 ```
 
-Con poche partite il fattore tende a 1.0 (nessun effetto); con 20+ partite raggiunge lo shrinkage massimo (0.65).
+Con poche partite il fattore tende a 1.0; con 20+ raggiunge lo shrinkage massimo (0.65).
 
 #### [4] 📐 Dixon-Coles (DC)
 
-Correzione della matrice di Poisson per i punteggi bassi (0-0, 0-1, 1-0, 1-1) dove la distribuzione indipendente sistematicamente sovra o sottostima le frequenze reali. Il parametro ρ viene stimato dai dati osservati (range: −0.25 / +0.05).
+Correzione della matrice di Poisson per i punteggi bassi (0-0, 0-1, 1-0, 1-1). Il parametro ρ viene stimato dai dati osservati (range: −0.25 / +0.05).
 
 #### [5] 🎯 Calibrazione (Temperature Scaling)
 
-Riduce l'overconfidence sistematica del modello, emersa dal backtest: quando il modello prevedeva 90%+, la frequenza reale era ~83-85%.
+Riduce l'overconfidence sistematica emersa dal backtest:
 
 ```
 p_calibrata = sigmoid(logit(p_raw) / T)    con T = 1.30
 ```
-
-Effetti pratici:
 
 | Probabilità grezza | Dopo calibrazione |
 |---|---|
@@ -173,14 +181,12 @@ La probabilità calibrata è quella mostrata sulla barra. Il valore grezzo (raw)
 
 ### Rating Elo — informativo, non influenza la probabilità
 
-Il rating Elo viene calcolato **in parallelo** dalla storia completa delle partite e mostrato in fondo a ogni card come contesto sulla forza relativa. **Non entra nel calcolo della probabilità.**
-
 ```
 E_casa = 1 / (1 + 10^((Elo_ospite − Elo_casa) / 400))
 Δ = K × (risultato − E_casa)    con K = 20
 ```
 
-Tutte le squadre partono da 1500 a inizio stagione. I rating diventano significativi dopo ~8-10 giornate.
+Tutte le squadre partono da 1500 a inizio stagione.
 
 | Rating | Stelle | Colore |
 |---|---|---|
@@ -190,9 +196,7 @@ Tutte le squadre partono da 1500 a inizio stagione. I rating diventano significa
 | 1400–1479 | ~ | 🟡 Arancione |
 | < 1400 | ▼ | 🔴 Rosso |
 
-**Come usarlo:** serve come sanity check visivo. Se il modello dà 85% ma l'Elo mostra casa ▼ vs ospite ★★★, vale la pena ragionarci prima di giocare.
-
-> ⚠️ L'Elo usa sempre la storia completa indipendentemente dal range statistiche selezionato nella UI.
+> ⚠️ L'Elo usa sempre la storia completa indipendentemente dal range statistiche selezionato.
 
 ---
 
@@ -203,25 +207,18 @@ Tutte le squadre partono da 1500 a inizio stagione. I rating diventano significa
 Le partite della prossima giornata sono ordinate per probabilità decrescente. Ogni card mostra:
 
 - **Percentuale calibrata** con barra colorata (🟢 ≥ 80% · 🟡 65–79% · 🔴 < 65%)
-- **Quota fair** = 1 / probabilità — la quota minima bookmaker per avere edge positivo
+- **Quota fair** = 1 / probabilità
 - **Raw** = probabilità prima della calibrazione
 - **λ Casa / Ospite** — gol attesi
 - **Att / Def** — parametri attacco/difesa usati per i lambda
 - **Fattore campo** e **ρ Dixon-Coles**
-- **Blocco Elo** — rating corrente e stelle per entrambe le squadre
-
-Sotto ogni sezione è presente un banner 🎯 con la soglia consigliata dal backtest e i dati sintetici di ROI e accuracy.
+- **Blocco Elo** — rating e stelle per entrambe le squadre
 
 ### Tab Classifiche
 
-Tabella per ogni campionato con codice colore zone:
-- 🟢 Verde — prime 2 posizioni (promozione diretta)
-- 🔵 Ciano — posizioni 3–8 (playoff)
-- 🔴 Rosso — ultime 3 posizioni (zona retrocessione)
+Codice colore zone: 🟢 promozione diretta · 🔵 playoff · 🔴 retrocessione.
 
 ### Range statistiche
-
-Filtrano le partite usate per il calcolo dei lambda:
 
 | Opzione | Descrizione |
 |---|---|
@@ -233,14 +230,15 @@ Filtrano le partite usate per il calcolo dei lambda:
 
 ---
 
+## Guida integrata
+
+Il bottone **📖 Guida** nella barra strumenti apre un modal con la documentazione completa, navigabile per sezioni: panoramica, fonti dati, modello statistico, layer togglabili, lettura delle card, range statistiche, Elo, backtest v10, guida sviluppatori.
+
+Il modal si chiude con `ESC` o cliccando fuori dal riquadro.
+
+---
+
 ## Backtest walk-forward
-
-Lo script `backtest_calciomagazine.py` valida il modello con metodologia walk-forward:
-
-- **Train:** giornate 1 … N−1
-- **Test:** previsione giornata N con esito già noto
-- **Minimo training:** 5 giornate
-- Confronta 4 configurazioni: Poisson puro · v9 completo · v10 senza calibrazione · v10 completo
 
 ```bash
 python backtest_calciomagazine.py
@@ -257,7 +255,7 @@ Risultati su dati reali 2025-2026 (1.039 partite, quota simulata 1.85):
 | Gir. B | 0.2420 | **0.2279** | +37% |
 | Gir. C | 0.2354 | **0.2152** | +38% |
 
-> v10 batte il Poisson puro in tutti e 4 i gironi. v9 invece era peggiore del Poisson puro, segno che i layer aggiuntivi senza calibrazione degradavano le previsioni.
+> v10 batte il Poisson puro in tutti e 4 i gironi. v9 era peggiore del Poisson puro: i layer aggiuntivi senza calibrazione degradavano le previsioni.
 
 ---
 
@@ -269,7 +267,7 @@ Risultati su dati reali 2025-2026 (1.039 partite, quota simulata 1.85):
 | GET | `/api/status` | Stato dati: conteggi, data aggiornamento, prossime giornate |
 | GET | `/api/predict` | Pronostici — params: `range`, `customN`, `decay`, `hf`, `dc`, `calib` |
 | GET | `/api/standings` | Classifiche per tutti i campionati |
-| POST | `/api/scrape` | Scarica/aggiorna dati |
+| POST | `/api/scrape` | Scarica/aggiorna dati — body param: `source` (`calciomagazine` \| `wikipedia`) |
 | GET | `/api/export` | Esporta il database JSON corrente |
 | POST | `/api/import` | Importa un database JSON |
 | POST | `/api/reset` | Cancella tutti i dati |
@@ -280,8 +278,9 @@ Risultati su dati reali 2025-2026 (1.039 partite, quota simulata 1.85):
 
 ```json
 {
-  "version": 7,
-  "updatedAt": "2026-02-26",
+  "version": 10,
+  "source": "calciomagazine",
+  "updatedAt": "2026-03-05",
   "serieB": {
     "results_by_giornata": { "1": [...], "2": [...] },
     "results": [
@@ -289,7 +288,7 @@ Risultati su dati reali 2025-2026 (1.039 partite, quota simulata 1.85):
     ],
     "next_giornata": 29,
     "next_fixtures": [
-      {"date": "2026-03-01", "home": "Mantova", "away": "Carrarese"}
+      {"date": "2026-03-08", "time": "20:30", "home": "Mantova", "away": "Carrarese"}
     ]
   },
   "serieCa": {},
@@ -298,27 +297,19 @@ Risultati su dati reali 2025-2026 (1.039 partite, quota simulata 1.85):
 }
 ```
 
-Il database è retrocompatibile con versioni precedenti: i campi mancanti vengono aggiunti automaticamente al caricamento.
+Il campo `time` è presente solo per i dati scaricati da calciomagazine.net. Il database è retrocompatibile con versioni precedenti.
 
 ---
 
 ## Tooltip informativi
 
-Ogni elemento interattivo dell'interfaccia mostra un tooltip al passaggio del mouse con la spiegazione del valore o del controllo. I tooltip sono gestiti da un layer globale (`#gtooltip`) agganciato al `<body>` — non vengono mai tagliati dall'`overflow:hidden` delle card.
+Tooltip al passaggio del mouse su ogni elemento interattivo, gestiti da un layer globale (`#gtooltip`) che non viene mai tagliato dall'`overflow:hidden` delle card. Coprono: campi delle card, toggle modello, bottoni principali, selettori fonte.
 
-Sono presenti tooltip su:
-- Ogni campo delle card (%, quota fair, pre-cal, λ, Att/Def, Campo, ρ, Elo)
-- Tutti e 5 i toggle del modello statistico (Poisson, Decay, HF, DC, Calibrazione)
-- I bottoni principali (Aggiorna, Esporta, Importa, Reset)
-- I bottoni fonte dati (calciomagazine, Wikipedia)
-
-Il bottone **💬 Tooltip ON/OFF** nella barra strumenti disabilita/riabilita tutti i tooltip globalmente.
+Il bottone **💬 Tooltip ON/OFF** disabilita/riabilita tutti i tooltip globalmente.
 
 ---
 
 ## Distribuzione come eseguibile (.exe)
-
-L'app può essere compilata in un singolo file `.exe` per Windows tramite **PyInstaller**, senza richiedere Python installato sul PC di destinazione.
 
 ### Build manuale
 
@@ -327,20 +318,11 @@ py -3.12 -m pip install pyinstaller flask requests beautifulsoup4 pywebview
 py -3.12 -m PyInstaller --onefile --noconsole --name "PronosticiCalcio" pronostici_app_v10.py
 ```
 
-L'exe viene generato in `dist\PronosticiCalcio.exe`.
+### Build automatica
 
-### Build automatica con build_exe.bat
+Doppio click su `build_exe.bat`: verifica Python 3.12, aggiorna dipendenze, compila, copia `PronosticiCalcio.exe` nella cartella corrente.
 
-Fai doppio click su `build_exe.bat` nella stessa cartella del sorgente. Lo script:
-1. Verifica la presenza di Python 3.12
-2. Aggiorna automaticamente tutte le dipendenze
-3. Pulisce la build precedente
-4. Compila l'exe
-5. Copia `PronosticiCalcio.exe` direttamente nella cartella corrente
-
-### Nota sul file dati
-
-Il codice usa `get_base_dir()` per determinare il percorso del database JSON a runtime:
+### File dati a runtime
 
 ```python
 def get_base_dir():
@@ -349,13 +331,14 @@ def get_base_dir():
     return Path(__file__).parent
 ```
 
-Questo assicura che `pronostici_data.json` venga sempre letto e scritto **accanto all'exe**, non in una cartella temporanea di sistema. Tieni sempre i due file nella stessa cartella.
+`pronostici_data.json` viene sempre letto/scritto **accanto all'exe**. Quando l'app gira come exe tutto l'output viene rediretto a `pronostici.log` nella stessa cartella.
 
 ---
 
 ## Note tecniche
 
-- Il server Flask gira su `127.0.0.1:5050` (solo locale, non esposto in rete)
-- Il thread Flask è daemon: si chiude automaticamente con la finestra
-- I fetch HTTP disabilitano la verifica SSL (`verify=False`) per compatibilità con alcuni proxy aziendali
-- BeautifulSoup usa il parser `html.parser` della stdlib (nessuna dipendenza esterna aggiuntiva)
+- Server Flask su `127.0.0.1:5050` (solo locale, non esposto in rete)
+- Thread Flask daemon: si chiude automaticamente con la finestra
+- Fetch HTTP con `verify=False` per compatibilità con proxy aziendali
+- BeautifulSoup usa `html.parser` della stdlib (nessuna dipendenza aggiuntiva)
+- Il filtro `_filter_future_fixtures()` esclude automaticamente fixture con data già passata, evitando che partite rinviate o con date errate vengano proposte come upcoming

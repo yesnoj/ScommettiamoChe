@@ -16,3 +16,4 @@ build/PronosticiCalcio/Analysis-00.toc
 backtest_output/backtest_report.txt
 backtest_output/backtest_grafici.png
 dist/PronosticiCalcio.exe
+/build

@@ -1,0 +1,291 @@
+══════════════════════════════════════════════════════════════════════════════
+  GRID SEARCH — NuovoMetodo (v11)  —  Serie B & C 2025-2026
+  Fonte: Wikipedia it.  |  Quota simulata: 1.85  |  Min. previsioni per classifica: 50
+  Config generate: 2688  |  Config uniche dopo dedup: 2016
+  Griglia: n_rec [2, 3, 4, 5, 6, 7, 8]  n_prev [0, 1, 2, 3, 4, 5, 6, 8]
+           w_prev [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]  bonus [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.35, 0.5]
+  Nota: w_rec è fisso a 1.0 — solo il rapporto w_rec/w_prev conta.
+  Generato: 2026-04-24
+══════════════════════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Serie B  —  CASA OVER 0.5  (282 previsioni walk-forward)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  TOP-10 per BRIER SCORE (↓ meglio)
+    #   Brier      LL   Acc60%   ROI60%   N60  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1  0.2145  0.8072    82.6%   +52.8%   161  n_rec=7 n_prev=8 w_prev=1.00 bonus=0.00
+    2  0.2151  0.8083    82.0%   +51.7%   161  n_rec=7 n_prev=8 w_prev=0.80 bonus=0.00
+    3  0.2152  0.8087    82.6%   +52.8%   161  n_rec=8 n_prev=8 w_prev=1.00 bonus=0.00
+    4  0.2152  0.8089    82.6%   +52.8%   161  n_rec=8 n_prev=8 w_prev=0.80 bonus=0.00
+    5  0.2153  0.8083    81.9%   +51.6%   155  n_rec=5 n_prev=8 w_prev=1.00 bonus=0.00
+    6  0.2153  0.8083    81.9%   +51.6%   155  n_rec=7 n_prev=6 w_prev=1.00 bonus=0.00
+    7  0.2153  0.8083    81.9%   +51.6%   155  n_rec=8 n_prev=5 w_prev=1.00 bonus=0.00
+    8  0.2154  0.8085    81.9%   +51.5%   160  n_rec=8 n_prev=5 w_prev=0.80 bonus=0.00
+    9  0.2155  0.8091    82.2%   +52.1%   163  n_rec=6 n_prev=8 w_prev=1.00 bonus=0.00
+   10  0.2155  0.8091    82.2%   +52.1%   163  n_rec=8 n_prev=6 w_prev=1.00 bonus=0.00
+
+  TOP-10 per LOG-LOSS (↓ meglio)
+    #      LL   Brier   Acc60%   ROI60%   N60  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1  0.6449  0.2221    83.6%   +54.6%   146  n_rec=7 n_prev=8 w_prev=1.00 bonus=0.05
+    2  0.6461  0.2226    83.3%   +54.2%   144  n_rec=7 n_prev=8 w_prev=0.80 bonus=0.05
+    3  0.6461  0.2228    82.6%   +52.9%   144  n_rec=5 n_prev=8 w_prev=1.00 bonus=0.05
+    4  0.6461  0.2228    82.6%   +52.9%   144  n_rec=7 n_prev=6 w_prev=1.00 bonus=0.05
+    5  0.6461  0.2228    82.6%   +52.9%   144  n_rec=8 n_prev=5 w_prev=1.00 bonus=0.05
+    6  0.6464  0.2227    83.4%   +54.4%   145  n_rec=8 n_prev=8 w_prev=1.00 bonus=0.05
+    7  0.6464  0.2229    83.3%   +54.2%   144  n_rec=8 n_prev=5 w_prev=0.80 bonus=0.05
+    8  0.6466  0.2228    83.9%   +55.2%   143  n_rec=8 n_prev=8 w_prev=0.80 bonus=0.05
+    9  0.6467  0.2229    82.5%   +52.7%   143  n_rec=6 n_prev=8 w_prev=1.00 bonus=0.05
+   10  0.6467  0.2229    82.5%   +52.7%   143  n_rec=8 n_prev=6 w_prev=1.00 bonus=0.05
+
+  TOP-10 per ROI@60%  (min 30 scommesse)
+    #    ROI60   N60    Acc60   Brier  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1   +66.3%    79    89.9%  0.2658  n_rec=4 n_prev=4 w_prev=0.40 bonus=0.25
+    2   +66.0%    78    89.7%  0.2641  n_rec=4 n_prev=5 w_prev=0.40 bonus=0.25
+    3   +65.7%    67    89.6%  0.2868  n_rec=5 n_prev=3 w_prev=0.20 bonus=0.35
+    4   +65.4%    66    89.4%  0.2881  n_rec=5 n_prev=1 w_prev=0.40 bonus=0.35
+    5   +65.3%    75    89.3%  0.2638  n_rec=4 n_prev=6 w_prev=0.40 bonus=0.25
+    6   +65.2%    56    89.3%  0.2772  n_rec=2 n_prev=8 w_prev=1.00 bonus=0.35
+    7   +65.2%    56    89.3%  0.2772  n_rec=4 n_prev=6 w_prev=1.00 bonus=0.35
+    8   +65.2%    56    89.3%  0.2772  n_rec=5 n_prev=5 w_prev=1.00 bonus=0.35
+    9   +65.2%    56    89.3%  0.2772  n_rec=6 n_prev=4 w_prev=1.00 bonus=0.35
+   10   +65.2%    56    89.3%  0.2772  n_rec=7 n_prev=3 w_prev=1.00 bonus=0.35
+
+  TOP-10 per ROI@70%  (min 20 scommesse)
+    #    ROI70   N70    Acc70   Brier  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1   +66.5%    30    90.0%  0.3068  n_rec=2 n_prev=8 w_prev=0.20 bonus=0.50
+    2   +65.2%    28    89.3%  0.2773  n_rec=2 n_prev=8 w_prev=0.40 bonus=0.35
+    3   +64.9%    46    89.1%  0.2532  n_rec=5 n_prev=5 w_prev=0.60 bonus=0.20
+    4   +64.4%    27    88.9%  0.2759  n_rec=2 n_prev=8 w_prev=0.60 bonus=0.35
+    5   +64.4%    27    88.9%  0.2766  n_rec=3 n_prev=6 w_prev=0.80 bonus=0.35
+    6   +64.4%    27    88.9%  0.2783  n_rec=3 n_prev=8 w_prev=0.40 bonus=0.35
+    7   +64.4%    63    88.9%  0.2768  n_rec=2 n_prev=3 w_prev=0.40 bonus=0.25
+    8   +64.4%    63    88.9%  0.2534  n_rec=5 n_prev=1 w_prev=0.60 bonus=0.15
+    9   +64.1%    62    88.7%  0.2532  n_rec=5 n_prev=3 w_prev=0.20 bonus=0.15
+   10   +64.0%    44    88.6%  0.2511  n_rec=3 n_prev=8 w_prev=0.80 bonus=0.20
+
+  Robustezza parametri — frequenza nei top 20 per Brier
+  n_rec       8→10  7→5  6→3  5→1  4→1
+  n_prev      8→9  6→6  5→4  4→1
+  w_prev      1.0→11  0.8→6  0.6→3
+  bonus       0.0→20
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Serie C Girone A  —  OSPITE UNDER 1.5  (308 previsioni walk-forward)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  TOP-10 per BRIER SCORE (↓ meglio)
+    #   Brier      LL   Acc60%   ROI60%   N60  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1  0.2565  0.8040    76.5%   +41.6%   115  n_rec=2 n_prev=8 w_prev=0.40 bonus=0.00
+    2  0.2568  0.8026    76.7%   +41.9%   116  n_rec=3 n_prev=8 w_prev=0.60 bonus=0.00
+    3  0.2569  0.8032    76.3%   +41.2%   114  n_rec=2 n_prev=8 w_prev=0.60 bonus=0.00
+    4  0.2570  0.8042    76.7%   +41.8%   120  n_rec=3 n_prev=8 w_prev=0.40 bonus=0.00
+    5  0.2586  0.8063    76.9%   +42.2%   108  n_rec=3 n_prev=8 w_prev=0.80 bonus=0.00
+    6  0.2589  0.8076    78.0%   +44.3%   109  n_rec=2 n_prev=8 w_prev=0.80 bonus=0.00
+    7  0.2601  0.7688    77.8%   +43.9%   108  n_rec=5 n_prev=8 w_prev=0.60 bonus=0.00
+    8  0.2602  0.8104    77.3%   +43.0%   110  n_rec=4 n_prev=8 w_prev=0.60 bonus=0.00
+    9  0.2602  0.8101    78.2%   +44.6%   110  n_rec=4 n_prev=8 w_prev=0.80 bonus=0.00
+   10  0.2603  0.7676    77.8%   +43.9%   108  n_rec=5 n_prev=8 w_prev=0.80 bonus=0.00
+
+  TOP-10 per LOG-LOSS (↓ meglio)
+    #      LL   Brier   Acc60%   ROI60%   N60  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1  0.7672  0.2608    75.0%   +38.8%   104  n_rec=7 n_prev=8 w_prev=0.60 bonus=0.00
+    2  0.7676  0.2603    77.8%   +43.9%   108  n_rec=5 n_prev=8 w_prev=0.80 bonus=0.00
+    3  0.7676  0.2613    75.7%   +40.1%   103  n_rec=7 n_prev=8 w_prev=0.80 bonus=0.00
+    4  0.7679  0.2614    76.9%   +42.3%   104  n_rec=8 n_prev=8 w_prev=0.60 bonus=0.00
+    5  0.7680  0.2605    77.6%   +43.5%   107  n_rec=7 n_prev=6 w_prev=0.80 bonus=0.00
+    6  0.7680  0.2606    77.6%   +43.5%   107  n_rec=8 n_prev=5 w_prev=0.80 bonus=0.00
+    7  0.7682  0.2612    75.5%   +39.6%   110  n_rec=8 n_prev=8 w_prev=0.40 bonus=0.00
+    8  0.7684  0.2605    78.0%   +44.3%   109  n_rec=8 n_prev=5 w_prev=0.60 bonus=0.00
+    9  0.7686  0.2604    76.9%   +42.3%   104  n_rec=7 n_prev=6 w_prev=0.60 bonus=0.00
+   10  0.7686  0.2611    78.0%   +44.3%   100  n_rec=5 n_prev=8 w_prev=1.00 bonus=0.00
+
+  TOP-10 per ROI@60%  (min 30 scommesse)
+    #    ROI60   N60    Acc60   Brier  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1   +75.8%    40    95.0%  0.3203  n_rec=2 n_prev=8 w_prev=0.20 bonus=0.35
+    2   +75.0%    37    94.6%  0.3037  n_rec=3 n_prev=8 w_prev=0.40 bonus=0.25
+    3   +73.4%    32    93.8%  0.3487  n_rec=2 n_prev=5 w_prev=0.20 bonus=0.50
+    4   +69.3%    47    91.5%  0.3237  n_rec=2 n_prev=6 w_prev=0.20 bonus=0.35
+    5   +69.1%    35    91.4%  0.3092  n_rec=4 n_prev=6 w_prev=0.40 bonus=0.25
+    6   +68.7%    34    91.2%  0.3238  n_rec=3 n_prev=8 w_prev=0.20 bonus=0.35
+    7   +68.7%    34    91.2%  0.3047  n_rec=3 n_prev=8 w_prev=0.60 bonus=0.25
+    8   +68.2%    44    90.9%  0.3020  n_rec=2 n_prev=8 w_prev=0.40 bonus=0.25
+    9   +68.2%    33    90.9%  0.3567  n_rec=3 n_prev=2 w_prev=0.20 bonus=0.50
+   10   +67.7%    32    90.6%  0.3086  n_rec=4 n_prev=8 w_prev=0.40 bonus=0.25
+
+  TOP-10 per ROI@70%  (min 20 scommesse)
+    #    ROI70   N70    Acc70   Brier  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1   +77.9%    26    96.2%  0.3075  n_rec=2 n_prev=6 w_prev=0.20 bonus=0.25
+    2   +77.6%    25    96.0%  0.3322  n_rec=2 n_prev=3 w_prev=0.20 bonus=0.35
+    3   +77.3%    24    95.8%  0.2958  n_rec=2 n_prev=6 w_prev=0.40 bonus=0.20
+    4   +77.0%    23    95.7%  0.3282  n_rec=2 n_prev=4 w_prev=0.20 bonus=0.35
+    5   +76.6%    22    95.5%  0.3036  n_rec=2 n_prev=8 w_prev=0.20 bonus=0.25
+    6   +75.8%    20    95.0%  0.3632  n_rec=2 n_prev=0 w_prev=0.00 bonus=0.50
+    7   +72.2%    29    93.1%  0.2867  n_rec=2 n_prev=6 w_prev=0.40 bonus=0.15
+    8   +70.8%    26    92.3%  0.2875  n_rec=2 n_prev=6 w_prev=0.60 bonus=0.15
+    9   +70.8%    39    92.3%  0.2950  n_rec=2 n_prev=8 w_prev=0.20 bonus=0.20
+   10   +70.8%    26    92.3%  0.2833  n_rec=2 n_prev=8 w_prev=0.40 bonus=0.15
+
+  Robustezza parametri — frequenza nei top 20 per Brier
+  n_rec       5→4  2→3  3→3  4→3  6→3  7→2
+  n_prev      8→10  6→7  5→2  4→1
+  w_prev      0.6→9  0.8→9  0.4→2
+  bonus       0.0→20
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Serie C Girone B  —  OSPITE UNDER 1.5  (275 previsioni walk-forward)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  TOP-10 per BRIER SCORE (↓ meglio)
+    #   Brier      LL   Acc60%   ROI60%   N60  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1  0.2770  1.0052    71.8%   +32.8%    78  n_rec=3 n_prev=8 w_prev=1.00 bonus=0.00
+    2  0.2770  1.0052    71.8%   +32.8%    78  n_rec=5 n_prev=6 w_prev=1.00 bonus=0.00
+    3  0.2770  1.0052    71.8%   +32.8%    78  n_rec=6 n_prev=5 w_prev=1.00 bonus=0.00
+    4  0.2770  1.0052    71.8%   +32.8%    78  n_rec=7 n_prev=4 w_prev=1.00 bonus=0.00
+    5  0.2770  1.0052    71.8%   +32.8%    78  n_rec=8 n_prev=3 w_prev=1.00 bonus=0.00
+    6  0.2775  1.0068    72.3%   +33.7%    83  n_rec=6 n_prev=8 w_prev=1.00 bonus=0.00
+    7  0.2775  1.0068    72.3%   +33.7%    83  n_rec=8 n_prev=6 w_prev=1.00 bonus=0.00
+    8  0.2781  1.0074    71.6%   +32.5%    81  n_rec=7 n_prev=4 w_prev=0.80 bonus=0.00
+    9  0.2782  1.0076    71.6%   +32.5%    81  n_rec=8 n_prev=3 w_prev=0.80 bonus=0.00
+   10  0.2782  1.0077    71.8%   +32.8%    85  n_rec=3 n_prev=8 w_prev=0.80 bonus=0.00
+
+  TOP-10 per LOG-LOSS (↓ meglio)
+    #      LL   Brier   Acc60%   ROI60%   N60  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1  0.9277  0.2847    73.9%   +36.7%    69  n_rec=3 n_prev=8 w_prev=1.00 bonus=0.05
+    2  0.9277  0.2847    73.9%   +36.7%    69  n_rec=5 n_prev=6 w_prev=1.00 bonus=0.05
+    3  0.9277  0.2847    73.9%   +36.7%    69  n_rec=6 n_prev=5 w_prev=1.00 bonus=0.05
+    4  0.9277  0.2847    73.9%   +36.7%    69  n_rec=7 n_prev=4 w_prev=1.00 bonus=0.05
+    5  0.9277  0.2847    73.9%   +36.7%    69  n_rec=8 n_prev=3 w_prev=1.00 bonus=0.05
+    6  0.9295  0.2854    72.6%   +34.3%    62  n_rec=6 n_prev=8 w_prev=1.00 bonus=0.05
+    7  0.9295  0.2854    72.6%   +34.3%    62  n_rec=8 n_prev=6 w_prev=1.00 bonus=0.05
+    8  0.9299  0.2857    72.9%   +34.8%    70  n_rec=3 n_prev=8 w_prev=0.80 bonus=0.05
+    9  0.9300  0.2858    72.9%   +34.8%    70  n_rec=7 n_prev=4 w_prev=0.80 bonus=0.05
+   10  0.9301  0.2859    72.9%   +34.8%    70  n_rec=8 n_prev=3 w_prev=0.80 bonus=0.05
+
+  TOP-10 per ROI@60%  (min 30 scommesse)
+    #    ROI60   N60    Acc60   Brier  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1   +55.2%    31    83.9%  0.3251  n_rec=2 n_prev=8 w_prev=0.40 bonus=0.25
+    2   +54.2%    30    83.3%  0.3546  n_rec=2 n_prev=6 w_prev=0.20 bonus=0.35
+    3   +54.2%    30    83.3%  0.3165  n_rec=3 n_prev=8 w_prev=0.40 bonus=0.20
+    4   +52.4%    34    82.4%  0.3243  n_rec=4 n_prev=5 w_prev=0.20 bonus=0.20
+    5   +50.3%    32    81.2%  0.3560  n_rec=2 n_prev=2 w_prev=1.00 bonus=0.35
+    6   +50.3%    32    81.2%  0.3560  n_rec=3 n_prev=1 w_prev=1.00 bonus=0.35
+    7   +50.3%    32    81.2%  0.3560  n_rec=4 n_prev=0 w_prev=0.00 bonus=0.35
+    8   +50.0%    37    81.1%  0.3229  n_rec=4 n_prev=6 w_prev=0.20 bonus=0.20
+    9   +49.2%    31    80.6%  0.3210  n_rec=3 n_prev=6 w_prev=0.40 bonus=0.20
+   10   +49.2%    31    80.6%  0.3321  n_rec=4 n_prev=5 w_prev=0.20 bonus=0.25
+
+  TOP-10 per ROI@70%  (min 20 scommesse)
+    #    ROI70   N70    Acc70   Brier  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1   +66.5%    20    90.0%  0.3404  n_rec=2 n_prev=6 w_prev=0.20 bonus=0.25
+    2   +61.9%    24    87.5%  0.3473  n_rec=2 n_prev=4 w_prev=0.20 bonus=0.25
+    3   +59.8%    22    86.4%  0.3431  n_rec=2 n_prev=5 w_prev=0.20 bonus=0.25
+    4   +58.6%    21    85.7%  0.3184  n_rec=2 n_prev=5 w_prev=0.40 bonus=0.15
+    5   +57.3%    20    85.0%  0.3269  n_rec=2 n_prev=8 w_prev=0.20 bonus=0.20
+    6   +54.2%    24    83.3%  0.3279  n_rec=2 n_prev=2 w_prev=1.00 bonus=0.15
+    7   +54.2%    24    83.3%  0.3333  n_rec=2 n_prev=6 w_prev=0.20 bonus=0.20
+    8   +54.2%    24    83.3%  0.3279  n_rec=3 n_prev=1 w_prev=1.00 bonus=0.15
+    9   +54.2%    24    83.3%  0.3279  n_rec=4 n_prev=0 w_prev=0.00 bonus=0.15
+   10   +51.8%    39    82.1%  0.3128  n_rec=2 n_prev=8 w_prev=0.20 bonus=0.10
+
+  Robustezza parametri — frequenza nei top 20 per Brier
+  n_rec       8→6  7→5  6→4  5→3  3→2
+  n_prev      8→8  6→5  5→3  4→2  3→2
+  w_prev      1.0→12  0.8→8
+  bonus       0.0→20
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Serie C Girone C  —  OSPITE UNDER 1.5  (308 previsioni walk-forward)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  TOP-10 per BRIER SCORE (↓ meglio)
+    #   Brier      LL   Acc60%   ROI60%   N60  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1  0.2653  0.9091    80.0%   +48.0%   115  n_rec=4 n_prev=5 w_prev=0.40 bonus=0.00
+    2  0.2656  0.9099    81.2%   +50.3%   112  n_rec=4 n_prev=6 w_prev=0.40 bonus=0.00
+    3  0.2659  0.9094    81.1%   +50.1%   106  n_rec=4 n_prev=5 w_prev=0.60 bonus=0.00
+    4  0.2663  0.9107    80.7%   +49.4%   109  n_rec=4 n_prev=6 w_prev=0.60 bonus=0.00
+    5  0.2665  0.9120    81.0%   +49.9%   116  n_rec=3 n_prev=6 w_prev=0.60 bonus=0.00
+    6  0.2669  0.9160    79.3%   +46.7%   111  n_rec=4 n_prev=6 w_prev=0.20 bonus=0.00
+    7  0.2669  0.9115    79.3%   +46.7%   111  n_rec=6 n_prev=4 w_prev=0.40 bonus=0.00
+    8  0.2670  0.9159    79.7%   +47.4%   123  n_rec=3 n_prev=6 w_prev=0.40 bonus=0.00
+    9  0.2670  0.9162    80.3%   +48.6%   117  n_rec=4 n_prev=5 w_prev=0.20 bonus=0.00
+   10  0.2670  0.9116    80.0%   +48.0%   110  n_rec=6 n_prev=3 w_prev=0.40 bonus=0.00
+
+  TOP-10 per LOG-LOSS (↓ meglio)
+    #      LL   Brier   Acc60%   ROI60%   N60  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1  0.9091  0.2653    80.0%   +48.0%   115  n_rec=4 n_prev=5 w_prev=0.40 bonus=0.00
+    2  0.9094  0.2659    81.1%   +50.1%   106  n_rec=4 n_prev=5 w_prev=0.60 bonus=0.00
+    3  0.9099  0.2656    81.2%   +50.3%   112  n_rec=4 n_prev=6 w_prev=0.40 bonus=0.00
+    4  0.9107  0.2663    80.7%   +49.4%   109  n_rec=4 n_prev=6 w_prev=0.60 bonus=0.00
+    5  0.9115  0.2669    79.3%   +46.7%   111  n_rec=6 n_prev=4 w_prev=0.40 bonus=0.00
+    6  0.9116  0.2670    80.0%   +48.0%   110  n_rec=6 n_prev=3 w_prev=0.40 bonus=0.00
+    7  0.9120  0.2665    81.0%   +49.9%   116  n_rec=3 n_prev=6 w_prev=0.60 bonus=0.00
+    8  0.9123  0.2672    79.2%   +46.6%   106  n_rec=6 n_prev=3 w_prev=0.60 bonus=0.00
+    9  0.9123  0.2675    80.2%   +48.3%   111  n_rec=6 n_prev=4 w_prev=0.20 bonus=0.00
+   10  0.9124  0.2673    81.8%   +51.4%   110  n_rec=4 n_prev=5 w_prev=0.80 bonus=0.00
+
+  TOP-10 per ROI@60%  (min 30 scommesse)
+    #    ROI60   N60    Acc60   Brier  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1   +67.8%    43    90.7%  0.3312  n_rec=4 n_prev=2 w_prev=0.20 bonus=0.35
+    2   +66.5%    40    90.0%  0.3569  n_rec=2 n_prev=2 w_prev=0.60 bonus=0.50
+    3   +66.5%    40    90.0%  0.3556  n_rec=2 n_prev=2 w_prev=0.80 bonus=0.50
+    4   +66.5%    40    90.0%  0.3559  n_rec=3 n_prev=1 w_prev=0.60 bonus=0.50
+    5   +65.5%    38    89.5%  0.3313  n_rec=4 n_prev=2 w_prev=0.40 bonus=0.35
+    6   +65.3%    47    89.4%  0.3322  n_rec=4 n_prev=1 w_prev=0.20 bonus=0.35
+    7   +64.4%    36    88.9%  0.3193  n_rec=6 n_prev=4 w_prev=0.60 bonus=0.25
+    8   +64.1%    62    88.7%  0.3159  n_rec=2 n_prev=2 w_prev=1.00 bonus=0.25
+    9   +64.1%    62    88.7%  0.3159  n_rec=3 n_prev=1 w_prev=1.00 bonus=0.25
+   10   +64.1%    62    88.7%  0.3159  n_rec=4 n_prev=0 w_prev=0.00 bonus=0.25
+
+  TOP-10 per ROI@70%  (min 20 scommesse)
+    #    ROI70   N70    Acc70   Brier  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1   +85.0%    20   100.0%  0.3335  n_rec=3 n_prev=2 w_prev=0.60 bonus=0.35
+    2   +77.0%    23    95.7%  0.3364  n_rec=2 n_prev=3 w_prev=0.40 bonus=0.35
+    3   +76.6%    22    95.5%  0.3687  n_rec=2 n_prev=1 w_prev=0.40 bonus=0.50
+    4   +76.6%    22    95.5%  0.3654  n_rec=2 n_prev=1 w_prev=0.60 bonus=0.50
+    5   +76.6%    22    95.5%  0.3638  n_rec=2 n_prev=1 w_prev=0.80 bonus=0.50
+    6   +76.6%    22    95.5%  0.3338  n_rec=3 n_prev=2 w_prev=0.40 bonus=0.35
+    7   +76.6%    22    95.5%  0.3148  n_rec=3 n_prev=3 w_prev=0.60 bonus=0.25
+    8   +76.2%    21    95.2%  0.3155  n_rec=2 n_prev=4 w_prev=0.60 bonus=0.25
+    9   +72.2%    29    93.1%  0.3747  n_rec=2 n_prev=1 w_prev=0.20 bonus=0.50
+   10   +71.3%    27    92.6%  0.3404  n_rec=2 n_prev=4 w_prev=0.20 bonus=0.35
+
+  Robustezza parametri — frequenza nei top 20 per Brier
+  n_rec       4→7  6→5  5→4  3→3  2→1
+  n_prev      5→6  6→6  4→5  3→2  8→1
+  w_prev      0.6→8  0.4→7  0.2→3  0.8→2
+  bonus       0.0→20
+
+══════════════════════════════════════════════════════════════════════════════
+  TOP-10 CONFIGURAZIONI GLOBALI  (Brier medio pesato su tutti i campionati)
+══════════════════════════════════════════════════════════════════════════════
+
+    #   Brier      LL    ROI60    ROI70  Config
+  ──────────────────────────────────────────────────────────────────────────
+    1  0.2560  0.8843   +43.5%   +45.7%  n_rec=2 n_prev=8 w_prev=0.60 bonus=0.00
+    2  0.2563  0.8844   +44.8%   +45.0%  n_rec=2 n_prev=8 w_prev=0.80 bonus=0.00
+    3  0.2566  0.8856   +43.7%   +47.2%  n_rec=3 n_prev=8 w_prev=0.60 bonus=0.00
+    4  0.2567  0.8855   +44.7%   +43.2%  n_rec=3 n_prev=8 w_prev=0.80 bonus=0.00
+    5  0.2572  0.8861   +45.2%   +41.9%  n_rec=4 n_prev=6 w_prev=0.80 bonus=0.00
+    6  0.2574  0.8870   +44.5%   +45.1%  n_rec=2 n_prev=8 w_prev=1.00 bonus=0.00
+    7  0.2574  0.8870   +44.5%   +45.1%  n_rec=4 n_prev=6 w_prev=1.00 bonus=0.00
+    8  0.2574  0.8870   +44.5%   +45.1%  n_rec=5 n_prev=5 w_prev=1.00 bonus=0.00
+    9  0.2574  0.8870   +44.5%   +45.1%  n_rec=6 n_prev=4 w_prev=1.00 bonus=0.00
+   10  0.2574  0.8870   +44.5%   +45.1%  n_rec=7 n_prev=3 w_prev=1.00 bonus=0.00
+

@@ -1,0 +1,34 @@
+{
+ "version": 11,
+ "source": "wikipedia",
+ "updatedAt": "2026-07-02",
+ "urls": {},
+ "serieB": {
+  "results_by_giornata": {},
+  "calendar_by_giornata": {},
+  "results": [],
+  "next_giornata": 0,
+  "next_fixtures": []
+ },
+ "serieCa": {
+  "results_by_giornata": {},
+  "calendar_by_giornata": {},
+  "results": [],
+  "next_giornata": 0,
+  "next_fixtures": []
+ },
+ "serieCb": {
+  "results_by_giornata": {},
+  "calendar_by_giornata": {},
+  "results": [],
+  "next_giornata": 0,
+  "next_fixtures": []
+ },
+ "serieCc": {
+  "results_by_giornata": {},
+  "calendar_by_giornata": {},
+  "results": [],
+  "next_giornata": 0,
+  "next_fixtures": []
+ }
+}

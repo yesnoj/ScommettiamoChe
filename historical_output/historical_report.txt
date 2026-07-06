@@ -1,0 +1,147 @@
+══════════════════════════════════════════════════════════════════════════════════
+  BACKTEST STORICO — NuovoMetodo (v11)  —  10 stagioni
+  Fonte: Wikipedia it.  |  Quota simulata: 1.85  |  Config uniche: 192
+  Griglia: n_rec [2, 3, 4, 5]  n_prev [4, 6, 8]
+           w_prev [0.4, 0.6, 0.8, 1.0]  bonus [0.0, 0.05, 0.1, 0.2]
+  Nota: w_rec fisso = 1.0 (solo il rapporto conta).
+  Generato: 2026-07-02
+══════════════════════════════════════════════════════════════════════════════════
+
+  DATASET SCARICATI
+  ──────────────────────────────────────────────────────────────────────────────
+  Campionato                Stagioni   Partite tot
+  Serie B                          2           759
+  Serie C Girone A                 8          2851
+  Serie C Girone B                 8          2853
+  Serie C Girone C                 8          2733
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SERIE B  —  CASA OVER 0.5  (aggregato su tutte le stagioni)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  TOP-15 per BRIER MEDIO (↓ meglio)
+    #   MeanBr   StdBr   MeanLL    ROI60    ROI70  Stag  Config
+  ──────────────────────────────────────────────────────────────────────────────
+    1   0.2476  0.0036   0.7126   +48.7%   +52.9%     2  n_rec=4 n_prev=8 w_prev=1.00 bonus=0.00
+    2   0.2478  0.0039   0.7134   +46.5%   +49.5%     2  n_rec=5 n_prev=6 w_prev=0.80 bonus=0.00
+    3   0.2478  0.0039   0.7136   +47.5%   +49.8%     2  n_rec=3 n_prev=8 w_prev=1.00 bonus=0.00
+    4   0.2478  0.0039   0.7136   +47.5%   +49.8%     2  n_rec=5 n_prev=6 w_prev=1.00 bonus=0.00
+    5   0.2479  0.0044   0.7137   +47.7%   +49.8%     2  n_rec=4 n_prev=8 w_prev=0.80 bonus=0.00
+    6   0.2479  0.0051   0.7134   +49.3%   +48.2%     2  n_rec=2 n_prev=8 w_prev=1.00 bonus=0.00
+    7   0.2479  0.0051   0.7134   +49.3%   +48.2%     2  n_rec=4 n_prev=6 w_prev=1.00 bonus=0.00
+    8   0.2481  0.0031   0.7127   +47.5%   +47.7%     2  n_rec=5 n_prev=8 w_prev=0.80 bonus=0.00
+    9   0.2481  0.0060   0.7144   +49.6%   +49.1%     2  n_rec=2 n_prev=8 w_prev=0.80 bonus=0.00
+   10   0.2482  0.0034   0.7134   +47.6%   +47.3%     2  n_rec=5 n_prev=8 w_prev=0.60 bonus=0.00
+   11   0.2483  0.0037   0.7146   +44.8%   +45.9%     2  n_rec=5 n_prev=6 w_prev=0.60 bonus=0.00
+   12   0.2484  0.0027   0.7133   +49.3%   +49.0%     2  n_rec=5 n_prev=8 w_prev=1.00 bonus=0.00
+   13   0.2485  0.0055   0.7149   +48.6%   +46.9%     2  n_rec=4 n_prev=6 w_prev=0.80 bonus=0.00
+   14   0.2487  0.0040   0.7161   +45.4%   +50.9%     2  n_rec=3 n_prev=8 w_prev=0.80 bonus=0.00
+   15   0.2488  0.0051   0.7166   +47.5%   +47.2%     2  n_rec=4 n_prev=8 w_prev=0.60 bonus=0.00
+
+  TOP-15 per ROI@60% MEDIO (min. 50 scommesse totali)
+    #    ROI60   TotN60   MeanBr  Stag  Config
+  ──────────────────────────────────────────────────────────────────────────────
+    1   +54.2%      120   0.2848     2  n_rec=5 n_prev=8 w_prev=1.00 bonus=0.20
+    2   +53.6%      118   0.2837     2  n_rec=4 n_prev=8 w_prev=1.00 bonus=0.20
+    3   +53.6%      159   0.2877     2  n_rec=2 n_prev=6 w_prev=0.40 bonus=0.20
+    4   +53.4%      123   0.2832     2  n_rec=5 n_prev=6 w_prev=1.00 bonus=0.20
+    5   +53.2%      122   0.2832     2  n_rec=3 n_prev=8 w_prev=1.00 bonus=0.20
+    6   +52.1%      163   0.2935     2  n_rec=2 n_prev=4 w_prev=0.40 bonus=0.20
+    7   +52.0%      123   0.2838     2  n_rec=3 n_prev=8 w_prev=0.80 bonus=0.20
+    8   +51.9%      196   0.2672     2  n_rec=2 n_prev=6 w_prev=0.60 bonus=0.10
+    9   +51.9%      156   0.2896     2  n_rec=2 n_prev=4 w_prev=0.60 bonus=0.20
+   10   +51.8%      128   0.2830     2  n_rec=5 n_prev=6 w_prev=0.80 bonus=0.20
+   11   +51.6%      122   0.2843     2  n_rec=5 n_prev=8 w_prev=0.80 bonus=0.20
+   12   +51.6%      138   0.2837     2  n_rec=4 n_prev=6 w_prev=0.60 bonus=0.20
+   13   +51.3%      258   0.2533     2  n_rec=2 n_prev=8 w_prev=0.40 bonus=0.00
+   14   +51.2%      131   0.2841     2  n_rec=5 n_prev=8 w_prev=0.60 bonus=0.20
+   15   +51.0%      147   0.2844     2  n_rec=4 n_prev=4 w_prev=0.60 bonus=0.20
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SERIE C  —  OSPITE UNDER 1.5  (aggregato su tutte le stagioni × 3 gironi)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  TOP-15 per BRIER MEDIO (↓ meglio)
+    #   MeanBr   StdBr   MeanLL    ROI60    ROI70  Stag  Config
+  ──────────────────────────────────────────────────────────────────────────────
+    1   0.2571  0.0201   0.8207   +42.6%   +43.1%    24  n_rec=5 n_prev=8 w_prev=0.80 bonus=0.00
+    2   0.2572  0.0195   0.8210   +42.4%   +43.5%    24  n_rec=3 n_prev=8 w_prev=0.80 bonus=0.00
+    3   0.2572  0.0199   0.8210   +42.2%   +43.2%    24  n_rec=5 n_prev=6 w_prev=0.80 bonus=0.00
+    4   0.2572  0.0199   0.8211   +42.2%   +41.1%    24  n_rec=4 n_prev=8 w_prev=0.80 bonus=0.00
+    5   0.2573  0.0201   0.8211   +41.9%   +43.1%    24  n_rec=5 n_prev=8 w_prev=1.00 bonus=0.00
+    6   0.2573  0.0201   0.8216   +42.5%   +43.2%    24  n_rec=5 n_prev=8 w_prev=0.60 bonus=0.00
+    7   0.2574  0.0199   0.8212   +42.9%   +43.7%    24  n_rec=3 n_prev=8 w_prev=1.00 bonus=0.00
+    8   0.2574  0.0199   0.8212   +42.9%   +43.7%    24  n_rec=5 n_prev=6 w_prev=1.00 bonus=0.00
+    9   0.2574  0.0200   0.8213   +42.2%   +42.9%    24  n_rec=4 n_prev=8 w_prev=1.00 bonus=0.00
+   10   0.2575  0.0199   0.8222   +42.3%   +43.6%    24  n_rec=5 n_prev=6 w_prev=0.60 bonus=0.00
+   11   0.2576  0.0199   0.8227   +42.5%   +42.6%    24  n_rec=4 n_prev=8 w_prev=0.60 bonus=0.00
+   12   0.2578  0.0191   0.8230   +42.6%   +43.7%    24  n_rec=3 n_prev=8 w_prev=0.60 bonus=0.00
+   13   0.2579  0.0192   0.8226   +42.2%   +43.4%    24  n_rec=4 n_prev=6 w_prev=0.80 bonus=0.00
+   14   0.2581  0.0192   0.8226   +42.1%   +43.5%    24  n_rec=2 n_prev=8 w_prev=1.00 bonus=0.00
+   15   0.2581  0.0192   0.8226   +42.1%   +43.5%    24  n_rec=4 n_prev=6 w_prev=1.00 bonus=0.00
+
+  TOP-15 per ROI@60% MEDIO (min. 50 scommesse totali)
+    #    ROI60   TotN60   MeanBr  Stag  Config
+  ──────────────────────────────────────────────────────────────────────────────
+    1   +46.4%     1182   0.2947    24  n_rec=3 n_prev=8 w_prev=0.40 bonus=0.20
+    2   +46.4%     1083   0.2933    24  n_rec=3 n_prev=8 w_prev=0.60 bonus=0.20
+    3   +46.1%     1063   0.2931    24  n_rec=3 n_prev=8 w_prev=0.80 bonus=0.20
+    4   +46.0%     1132   0.2935    24  n_rec=2 n_prev=8 w_prev=0.80 bonus=0.20
+    5   +45.8%     1066   0.2934    24  n_rec=3 n_prev=8 w_prev=1.00 bonus=0.20
+    6   +45.8%     1066   0.2934    24  n_rec=5 n_prev=6 w_prev=1.00 bonus=0.20
+    7   +45.5%     1070   0.2931    24  n_rec=5 n_prev=6 w_prev=0.80 bonus=0.20
+    8   +45.5%     1123   0.2936    24  n_rec=2 n_prev=8 w_prev=1.00 bonus=0.20
+    9   +45.5%     1123   0.2936    24  n_rec=4 n_prev=6 w_prev=1.00 bonus=0.20
+   10   +45.4%     1151   0.2939    24  n_rec=3 n_prev=6 w_prev=0.80 bonus=0.20
+   11   +45.3%     1125   0.2934    24  n_rec=4 n_prev=6 w_prev=0.80 bonus=0.20
+   12   +45.3%     1035   0.2936    24  n_rec=5 n_prev=8 w_prev=1.00 bonus=0.20
+   13   +45.3%     1102   0.2931    24  n_rec=5 n_prev=6 w_prev=0.60 bonus=0.20
+   14   +45.3%     1037   0.2936    24  n_rec=4 n_prev=8 w_prev=1.00 bonus=0.20
+   15   +45.3%     1617   0.2749    24  n_rec=5 n_prev=6 w_prev=0.80 bonus=0.10
+
+══════════════════════════════════════════════════════════════════════════════════
+  CLASSIFICA GLOBALE  —  Serie B + Serie C combinati
+══════════════════════════════════════════════════════════════════════════════════
+
+  TOP-15 per BRIER MEDIO GLOBALE (↓ meglio)
+    #   MeanBr   StdBr   MeanLL    ROI60    ROI70  Stag  Config
+  ──────────────────────────────────────────────────────────────────────────────
+    1   0.2564  0.0195   0.8124   +43.0%   +43.5%    26  n_rec=5 n_prev=8 w_prev=0.80 bonus=0.00
+    2   0.2565  0.0192   0.8127   +42.5%   +43.7%    26  n_rec=5 n_prev=6 w_prev=0.80 bonus=0.00
+    3   0.2565  0.0193   0.8129   +42.6%   +41.8%    26  n_rec=4 n_prev=8 w_prev=0.80 bonus=0.00
+    4   0.2565  0.0188   0.8129   +42.6%   +44.0%    26  n_rec=3 n_prev=8 w_prev=0.80 bonus=0.00
+    5   0.2566  0.0195   0.8133   +42.9%   +43.5%    26  n_rec=5 n_prev=8 w_prev=0.60 bonus=0.00
+    6   0.2566  0.0195   0.8128   +42.5%   +43.5%    26  n_rec=5 n_prev=8 w_prev=1.00 bonus=0.00
+    7   0.2566  0.0194   0.8130   +42.7%   +43.7%    26  n_rec=4 n_prev=8 w_prev=1.00 bonus=0.00
+    8   0.2567  0.0192   0.8129   +43.2%   +44.2%    26  n_rec=3 n_prev=8 w_prev=1.00 bonus=0.00
+    9   0.2567  0.0192   0.8129   +43.2%   +44.2%    26  n_rec=5 n_prev=6 w_prev=1.00 bonus=0.00
+   10   0.2568  0.0193   0.8139   +42.5%   +43.8%    26  n_rec=5 n_prev=6 w_prev=0.60 bonus=0.00
+   11   0.2570  0.0192   0.8145   +42.9%   +42.9%    26  n_rec=4 n_prev=8 w_prev=0.60 bonus=0.00
+   12   0.2572  0.0186   0.8143   +42.6%   +43.7%    26  n_rec=4 n_prev=6 w_prev=0.80 bonus=0.00
+   13   0.2572  0.0184   0.8152   +42.9%   +43.9%    26  n_rec=3 n_prev=8 w_prev=0.60 bonus=0.00
+   14   0.2573  0.0187   0.8142   +42.7%   +43.9%    26  n_rec=2 n_prev=8 w_prev=1.00 bonus=0.00
+   15   0.2573  0.0187   0.8142   +42.7%   +43.9%    26  n_rec=4 n_prev=6 w_prev=1.00 bonus=0.00
+
+══════════════════════════════════════════════════════════════════════════════════
+  CONFIGURAZIONI PIÙ ROBUSTE (Brier basso E deviazione bassa)
+  Filtra le config con Brier medio nel top-30%, poi ordina per stdev crescente
+══════════════════════════════════════════════════════════════════════════════════
+
+    #   StdBr   MeanBr  Stag  Config
+  ────────────────────────────────────────────────────────────
+    1  0.0172   0.2620    26  n_rec=3 n_prev=6 w_prev=0.40 bonus=0.00
+    2  0.0176   0.2590    26  n_rec=3 n_prev=6 w_prev=0.60 bonus=0.00
+    3  0.0180   0.2582    26  n_rec=3 n_prev=6 w_prev=0.80 bonus=0.00
+    4  0.0180   0.2598    26  n_rec=3 n_prev=8 w_prev=0.40 bonus=0.00
+    5  0.0180   0.2621    26  n_rec=2 n_prev=8 w_prev=0.40 bonus=0.00
+    6  0.0182   0.2652    26  n_rec=2 n_prev=6 w_prev=0.40 bonus=0.00
+    7  0.0182   0.2583    26  n_rec=2 n_prev=8 w_prev=0.60 bonus=0.00
+    8  0.0184   0.2631    26  n_rec=3 n_prev=4 w_prev=0.60 bonus=0.00
+    9  0.0184   0.2572    26  n_rec=3 n_prev=8 w_prev=0.60 bonus=0.00
+   10  0.0184   0.2582    26  n_rec=3 n_prev=6 w_prev=1.00 bonus=0.00
+   11  0.0184   0.2582    26  n_rec=5 n_prev=4 w_prev=1.00 bonus=0.00
+   12  0.0185   0.2573    26  n_rec=2 n_prev=8 w_prev=0.80 bonus=0.00
+   13  0.0185   0.2581    26  n_rec=5 n_prev=4 w_prev=0.80 bonus=0.00
+   14  0.0186   0.2609    26  n_rec=2 n_prev=6 w_prev=0.60 bonus=0.00
+   15  0.0186   0.2585    26  n_rec=5 n_prev=4 w_prev=0.60 bonus=0.00
+

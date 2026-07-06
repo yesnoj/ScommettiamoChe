@@ -2,7 +2,7 @@
 chcp 65001 >nul
 echo.
 echo ============================================
-echo   Build Pronostici App v10 - EXE
+echo   Build Pronostici App v11 - EXE
 echo ============================================
 echo.
 
@@ -11,6 +11,13 @@ py -3.12 --version >nul 2>&1
 if errorlevel 1 (
     echo [ERRORE] Python 3.12 non trovato.
     echo Installa Python 3.12 da https://www.python.org/downloads/
+    pause
+    exit /b 1
+)
+
+:: Verifica che il sorgente esista
+if not exist pronostici_app_v11.py (
+    echo [ERRORE] pronostici_app_v11.py non trovato in questa cartella.
     pause
     exit /b 1
 )
@@ -27,13 +34,14 @@ echo       OK
 
 :: Pulisce build precedente
 echo [2/3] Pulizia build precedente...
-if exist dist\pronostici_app_v10.exe del /q dist\pronostici_app_v10.exe
+if exist dist\PronosticiCalcio.exe del /q dist\PronosticiCalcio.exe
+if exist PronosticiCalcio.exe del /q PronosticiCalcio.exe
 if exist build rmdir /s /q build
 echo       OK
 
-:: Build
+:: Build tramite file .spec
 echo [3/3] Compilazione in corso (attendere)...
-py -3.12 -m PyInstaller --onefile --noconsole --name "PronosticiCalcio" pronostici_app_v10.py
+py -3.12 -m PyInstaller --noconfirm pronostici_app_v11.spec
 if errorlevel 1 (
     echo.
     echo [ERRORE] Build fallita. Controlla i messaggi sopra.

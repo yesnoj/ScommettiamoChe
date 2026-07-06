@@ -10,7 +10,7 @@ Miglioramenti v10:
 
 Fonti dati selezionabili:
   • calciomagazine.net  (parser testo)
-  • Wikipedia it.       (parser HTML/BeautifulSoup)
+  • Wikipedia it.       (parser HTML/BeautifulSoup)  ← DEFAULT
 """
 
 import json, re, os, math, sys
@@ -589,8 +589,8 @@ _LEAGUE_KEYS = ["serieB", "serieCa", "serieCb", "serieCc"]
 
 def get_default_data():
     return {
-        "version":  10,
-        "source":    "calciomagazine",
+        "version":  11,
+        "source":    "wikipedia",
         "updatedAt": date.today().isoformat(),
         "urls": {},
         **{k: {
@@ -620,6 +620,8 @@ def load_data():
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
+            needs_save = False
+            # Migrazione v9 → v10 (formato dati)
             if data.get("version", 0) < 10:
                 print("  📦 Migrazione dati → v10...")
                 for k in _LEAGUE_KEYS:
@@ -638,7 +640,16 @@ def load_data():
                         lg.setdefault("next_giornata", 0)
                         lg.setdefault("next_fixtures", [])
                 data["version"] = 10
-                data.setdefault("source", "calciomagazine")
+                data.setdefault("source", "wikipedia")
+                needs_save = True
+            # Migrazione v10 → v11: default source = wikipedia
+            # (deciso dopo grid search 04/2026 — Wikipedia è più affidabile)
+            if data.get("version", 0) < 11:
+                print("  📦 Migrazione → v11 (default source → wikipedia)...")
+                data["source"] = "wikipedia"
+                data["version"] = 11
+                needs_save = True
+            if needs_save:
                 save_data(data)
             return data
         except Exception as e:
@@ -670,7 +681,7 @@ NM_N_RECENT  = 3
 NM_N_PREV    = 3
 NM_W_RECENT  = 1.3
 NM_W_PREV    = 0.7
-NM_BONUS     = 0.0    # default 0; UI default: Serie B=0.25, Serie C=0.15
+NM_BONUS     = 0.0    # default 0 (grid search 04/2026: bonus=0 ottimo per Brier su tutti i campionati)
 
 
 def _weighted_pct(matches, score_fn, n_recent, n_prev, w_recent, w_prev, max_score=1.0):
@@ -919,7 +930,7 @@ def api_standings():
 
 @app.route("/api/scrape", methods=["POST"])
 def api_scrape():
-    source = request.json.get("source","calciomagazine") if request.is_json else "calciomagazine"
+    source = request.json.get("source","wikipedia") if request.is_json else "wikipedia"
     data   = load_data()
     if data.get("version",0) < 8:
         data = get_default_data()
@@ -1138,10 +1149,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <!-- Source selector -->
 <div class="source-bar">
-  <div class="source-btn active" id="srcCM" onclick="setSource('calciomagazine')">
+  <div class="source-btn" id="srcCM" onclick="setSource('calciomagazine')">
     <span class="src-dot"></span>calciomagazine.net
   </div>
-  <div class="source-btn" id="srcWK" onclick="setSource('wikipedia')">
+  <div class="source-btn active" id="srcWK" onclick="setSource('wikipedia')">
     <span class="src-dot"></span>Wikipedia
   </div>
 </div>
@@ -1211,8 +1222,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="param-item" style="border-color:rgba(34,211,238,0.3)">
     <label>🎯 Bonus prestazione</label>
     <div class="param-row">
-      <input type="range" id="bonusB" min="0" max="100" value="25" step="5" oninput="updateParams()">
-      <span class="param-val" id="bonusBVal">0.25</span>
+      <input type="range" id="bonusB" min="0" max="100" value="0" step="5" oninput="updateParams()">
+      <span class="param-val" id="bonusBVal">0.00</span>
     </div>
   </div>
 </div>
@@ -1264,8 +1275,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="param-item" style="border-color:rgba(167,139,250,0.3)">
     <label>🎯 Bonus prestazione</label>
     <div class="param-row">
-      <input type="range" id="bonusC" min="0" max="100" value="15" step="5" oninput="updateParams()">
-      <span class="param-val" id="bonusCVal">0.15</span>
+      <input type="range" id="bonusC" min="0" max="100" value="0" step="5" oninput="updateParams()">
+      <span class="param-val" id="bonusCVal">0.00</span>
     </div>
   </div>
 </div>
@@ -1308,7 +1319,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="toast" id="toast"></div>
 
 <script>
-let curSource = 'calciomagazine';
+let curSource = 'wikipedia';
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 function pc(p){return p>=1.0?'perfect':p>=0.70?'high':p>=0.50?'mid':'low'}
@@ -1550,7 +1561,7 @@ if __name__ == "__main__":
     else:
         d     = load_data()
         total = sum(len(d[k].get("results", [])) for k in _LEAGUE_KEYS)
-        src   = d.get("source", "calciomagazine")
+        src   = d.get("source", "wikipedia")
         print(f"📂 Dati caricati: {total} risultati (fonte: {src})")
 
     def run_server():

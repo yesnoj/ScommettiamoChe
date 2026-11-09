@@ -1,4 +1,6 @@
 .DS_Store
+__pycache__/
+*.pyc
 build/PronosticiCalcio/xref-PronosticiCalcio.html
 build/PronosticiCalcio/warn-PronosticiCalcio.txt
 build/PronosticiCalcio/PYZ-00.toc

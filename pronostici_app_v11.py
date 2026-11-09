@@ -1326,6 +1326,10 @@ if __name__ == "__main__":
     server = threading.Thread(target=run_server, daemon=True)
     server.start()
 
+    # Tenta la finestra desktop (pywebview). Se non e' installato o il
+    # suo backend non e' disponibile (es. su Windows manca WebView2 o
+    # .NET Framework), ricade sul browser di sistema anziche' crashare.
+    webview_ok = False
     try:
         import webview
         print("⚽ Avvio finestra desktop...")
@@ -1335,9 +1339,18 @@ if __name__ == "__main__":
             width=1100, height=800, min_size=(600, 500),
         )
         webview.start()
+        webview_ok = True
     except ImportError:
         print(f"\n⚠️  pywebview non trovato → pip install pywebview")
-        print(f"    Oppure apri: http://localhost:{PORT}\n")
+    except Exception as e:
+        # Backend GUI non disponibile (es. WebView2 / .NET mancante su Windows).
+        print(f"\n⚠️  pywebview non ha potuto avviare la finestra desktop:")
+        print(f"    {type(e).__name__}: {e}")
+        print(f"    Suggerimento Windows: installa Microsoft Edge WebView2 Runtime")
+        print(f"    da https://developer.microsoft.com/microsoft-edge/webview2/")
+
+    if not webview_ok:
+        print(f"\n🌐 Apro l'app nel browser di sistema: http://localhost:{PORT}\n")
         import webbrowser
         webbrowser.open(f"http://localhost:{PORT}")
         try:

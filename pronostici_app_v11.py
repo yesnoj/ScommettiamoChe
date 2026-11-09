@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 """
 ⚽ Pronostici Serie B & C — v11 Python/Flask
-Modello Dixon-Coles + Decadimento temporale + Fattore campo
-Miglioramenti v10:
-  • Decay più rapido (emivita 70gg invece di 139gg)
-  • Shrinkage adattivo fattore campo (proporzionale ai dati disponibili)
-  • Prior stagionale squadre con pochi dati (< 8 partite)
-  • Calibrazione isotonica (temperature scaling, T configurabile)
+Modello: NuovoMetodo (media pesata forma recente)
+Default parametri: ottimizzati su backtest 11 stagioni (2015-16 → 2025-26)
 
-Fonti dati selezionabili:
-  • calciomagazine.net  (parser testo)
-  • Wikipedia it.       (parser HTML/BeautifulSoup)  ← DEFAULT
+Fonte dati:
+  • Wikipedia it.  (parser HTML/BeautifulSoup) — Serie B + Serie C 3 gironi
+  URL dedotti automaticamente dalla stagione in corso; personalizzabili dal
+  pannello ⚙️ URL Fonti.
 """
 
 import json, re, os, math, sys
@@ -59,34 +56,22 @@ APP_DIR   = get_base_dir()
 DATA_FILE = APP_DIR / "pronostici_data.json"
 PORT      = 5050
 
-# ── Fonti calciomagazine.net ──────────────────────────────────
-CM_LEAGUES = {
-    "serieB": {
-        "name": "Serie B",
-        "results_url":  "https://www.calciomagazine.net/risultati-serie-b-120385.html",
-        "calendar_url": "https://www.calciomagazine.net/calendario-serie-b-99638.html",
-    },
-    "serieCa": {
-        "name": "Serie C Girone A",
-        "results_url":      "https://www.calciomagazine.net/risultati-serie-c-girone-a-120404.html",
-        "calendar_url":     "https://www.calciomagazine.net/calendario-serie-c-girone-a-99207.html",
-        "calendar_url_alt": "https://www.calciomagazine.net/calendario-serie-c-girone-a-99200.html",
-    },
-    "serieCb": {
-        "name": "Serie C Girone B",
-        "results_url":  "https://www.calciomagazine.net/risultati-serie-c-girone-b-120417.html",
-        "calendar_url": "https://www.calciomagazine.net/calendario-serie-c-girone-b-99208.html",
-    },
-    "serieCc": {
-        "name": "Serie C Girone C",
-        "results_url":  "https://www.calciomagazine.net/risultati-serie-c-girone-c-120418.html",
-        "calendar_url": "https://www.calciomagazine.net/calendario-serie-c-girone-c-99209.html",
-    },
-}
-
 # ── Fonti Wikipedia ───────────────────────────────────────────
-WIKI_SERIE_B = "https://it.wikipedia.org/wiki/Serie_B_2025-2026"
-WIKI_SERIE_C = "https://it.wikipedia.org/wiki/Serie_C_2025-2026"
+# Gli URL default si deducono dalla stagione in corso — non serve toccarli
+# ogni estate. L'utente può comunque sovrascriverli dal pannello ⚙️ URL Fonti.
+
+def _current_season_slug():
+    """Ritorna lo slug della stagione in corso (es: '2026-2027').
+    Una stagione va da luglio dell'anno N a giugno dell'anno N+1."""
+    today = date.today()
+    start = today.year if today.month >= 7 else today.year - 1
+    return f"{start}-{start+1}"
+
+def _default_wiki_serie_b():
+    return f"https://it.wikipedia.org/wiki/Serie_B_{_current_season_slug()}"
+
+def _default_wiki_serie_c():
+    return f"https://it.wikipedia.org/wiki/Serie_C_{_current_season_slug()}"
 
 MESI_IT = {
     "gen":1,"feb":2,"mar":3,"apr":4,"mag":5,"giu":6,
@@ -119,192 +104,12 @@ def fetch_page(url):
 
 
 # ============================================================
-# PARSER — calciomagazine.net
+# Helpers condivisi
 # ============================================================
-def _extract_text(html):
-    if not html:
-        return ""
-    text = re.sub(r"<br\s*/?>", "\n", html)
-    text = re.sub(r"</(?:p|div|li|h[1-6]|tr)>", "\n", text)
-    text = re.sub(r"<[^>]+>", " ", text)
-    text = re.sub(r"[ \t]+", " ", text)
-    text = re.sub(r"\n[ \t]+", "\n", text)
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    import html as html_mod
-    return html_mod.unescape(text).strip()
-
-
-def _infer_year(month, day):
-    """Stagione 2025-2026: lug-dic → 2025, gen-giu → 2026."""
-    return 2025 if month >= 7 else 2026
-
-
-def cm_parse_results(html):
-    """Risultati da calciomagazine.net → {giornata: [result_dict]}"""
-    text = _extract_text(html)
-    giornate = {}
-    current_g = 0
-    g_re  = re.compile(r"(\d+)[ªa°]\s*Giornata", re.IGNORECASE)
-    r_re  = re.compile(
-        r"(\d{2})\.(\d{2})\.\s*ore\s*(\d{1,2}:\d{2})\s+"
-        r"(.+?)\s*[-–]\s*(.+?)\s+(\d+)\s*:\s*(\d+)"
-    )
-    r_alt = re.compile(
-        r"(\d{2})\.(\d{2})\.\s+(.+?)\s*[-–]\s*(.+?)\s+(\d+)\s*:\s*(\d+)"
-    )
-    for line in text.split("\n"):
-        line = line.strip()
-        if not line:
-            continue
-        if "annullata" in line.lower() or "rinviata" in line.lower():
-            continue
-        gm = g_re.search(line)
-        if gm:
-            current_g = int(gm.group(1))
-            giornate.setdefault(current_g, [])
-            continue
-        rm = r_re.search(line)
-        if rm and current_g > 0:
-            day_n, month = int(rm.group(1)), int(rm.group(2))
-            time_str     = rm.group(3)
-            home, away   = rm.group(4).strip(), rm.group(5).strip()
-            hg, ag       = int(rm.group(6)), int(rm.group(7))
-            year         = _infer_year(month, day_n)
-            try:
-                date_str = date(year, month, day_n).isoformat()
-            except ValueError:
-                date_str = f"{year}-{month:02d}-{day_n:02d}"
-            giornate[current_g].append(
-                {"date": date_str, "time": time_str, "home": home, "away": away, "hg": hg, "ag": ag}
-            )
-            continue
-        rm = r_alt.search(line)
-        if rm and current_g > 0:
-            day_n, month = int(rm.group(1)), int(rm.group(2))
-            home, away   = rm.group(3).strip(), rm.group(4).strip()
-            hg, ag       = int(rm.group(5)), int(rm.group(6))
-            year         = _infer_year(month, day_n)
-            try:
-                date_str = date(year, month, day_n).isoformat()
-            except ValueError:
-                date_str = f"{year}-{month:02d}-{day_n:02d}"
-            giornate[current_g].append(
-                {"date": date_str, "home": home, "away": away, "hg": hg, "ag": ag}
-            )
-    return giornate
-
-
-def cm_parse_calendar(html):
-    """Calendario da calciomagazine.net → {giornata: [fixture_dict]}"""
-    text = _extract_text(html)
-    giornate = {}
-    current_g = 0
-    g_re = re.compile(r"(\d+)[ªa°]\s*Giornata", re.IGNORECASE)
-    f_re = re.compile(
-        r"(?:luned[ìi]|marted[ìi]|mercoled[ìi]|gioved[ìi]|venerd[ìi]|sabato|domenica)\s+"
-        r"(\d{2})\.(\d{2})\.(\d{2,4})\s+ore\s*(\d{1,2}:\d{2})\s+"
-        r"(.+?)\s*[-–]\s*(.+?)(?:\s*$)",
-        re.IGNORECASE,
-    )
-    for line in text.split("\n"):
-        line = line.strip()
-        if not line:
-            continue
-        gm = g_re.search(line)
-        if gm:
-            current_g = int(gm.group(1))
-            giornate.setdefault(current_g, [])
-        fm = f_re.search(line)
-        if fm and current_g > 0:
-            day_n, month = int(fm.group(1)), int(fm.group(2))
-            year_raw = int(fm.group(3))
-            year     = year_raw + 2000 if year_raw < 100 else year_raw
-            time_str = fm.group(4)
-            home     = fm.group(5).strip()
-            away     = re.sub(r"\s*\*+$", "", fm.group(6)).strip()
-            try:
-                date_str = date(year, month, day_n).isoformat()
-            except ValueError:
-                date_str = f"{year}-{month:02d}-{day_n:02d}"
-            giornate[current_g].append({"date": date_str, "time": time_str, "home": home, "away": away})
-    return giornate
-
-
-def _fixtures_are_future(fixtures):
-    """Ritorna True se almeno un fixture ha data >= oggi (o data sconosciuta)."""
-    today = date.today().isoformat()
-    for f in fixtures:
-        d = f.get("date", "")
-        if not d or d >= today:
-            return True
-    return False
-
 def _filter_future_fixtures(fixtures):
     """Ritorna solo i fixture con data >= oggi (o senza data)."""
     today = date.today().isoformat()
     return [f for f in fixtures if not f.get("date") or f["date"] >= today]
-
-def cm_find_next_giornata(results_by_g, calendar_by_g):
-    if calendar_by_g:
-        all_g = sorted(set(list(results_by_g) + list(calendar_by_g)))
-        for g in all_g:
-            cal = calendar_by_g.get(g, [])
-            res = results_by_g.get(g, [])
-            # Giornata incompleta E con almeno un fixture futuro
-            if len(res) < len(cal) and _fixtures_are_future(cal):
-                return g
-        return (max(all_g) + 1) if all_g else 1
-    if results_by_g:
-        played = sorted(results_by_g)
-        for g in range(1, 39):
-            if g not in results_by_g or not results_by_g[g]:
-                return g
-        return played[-1] + 1
-    return 1
-
-
-def scrape_calciomagazine(data):
-    """Scarica tutti i campionati da calciomagazine.net e aggiorna data."""
-    errors, log = [], []
-    custom_urls = data.get("urls", {}).get("calciomagazine", {})
-    for key, cfg in CM_LEAGUES.items():
-        name = cfg["name"]
-        cu = custom_urls.get(key, {})
-        res_url = cu.get("results_url", cfg["results_url"])
-        cal_url = cu.get("calendar_url", cfg["calendar_url"])
-        cal_alt = cu.get("calendar_url_alt", cfg.get("calendar_url_alt"))
-        # Risultati
-        html_r = fetch_page(res_url)
-        if html_r is None:
-            errors.append(f"Errore risultati {name}")
-        else:
-            rbg = cm_parse_results(html_r)
-            all_r = [m for g in rbg.values() for m in g]
-            if all_r:
-                data[key]["results_by_giornata"] = {str(k): v for k, v in rbg.items()}
-                data[key]["results"] = all_r
-                log.append(f"{name}: {len(all_r)} risultati in {len(rbg)} giornate")
-            else:
-                prev = len(data[key].get("results", []))
-                log.append(f"{name}: ⚠️ nessun risultato (mantengo {prev} precedenti)")
-                if prev == 0:
-                    errors.append(f"Nessun risultato {name}")
-        # Calendario
-        html_c = fetch_page(cal_url)
-        if html_c is None and cal_alt:
-            log.append(f"  → URL alternativo per {name}...")
-            html_c = fetch_page(cal_alt)
-        if html_c is None:
-            errors.append(f"Errore calendario {name}")
-        else:
-            cbg = cm_parse_calendar(html_c)
-            data[key]["calendar_by_giornata"] = {str(k): v for k, v in cbg.items()}
-            rbg_int = {int(k): v for k, v in data[key].get("results_by_giornata", {}).items()}
-            next_g  = cm_find_next_giornata(rbg_int, cbg)
-            data[key]["next_giornata"] = next_g
-            data[key]["next_fixtures"] = _filter_future_fixtures(cbg.get(next_g, []))
-            log.append(f"  → Prossima: {next_g}ª ({len(data[key]['next_fixtures'])} partite)")
-    return errors, log
 
 
 # ============================================================
@@ -320,7 +125,11 @@ def _parse_italian_date(text):
     month   = next((v for k, v in MESI_IT.items() if ms.startswith(k)), 0)
     if not month:
         return ""
-    year = 2025 if month >= 7 else 2026
+    # Deduce la stagione in corso dalla data odierna anziché hardcodarla.
+    # Una stagione va da luglio dell'anno N a giugno dell'anno N+1.
+    today = date.today()
+    season_start = today.year if today.month >= 7 else today.year - 1
+    year = season_start if month >= 7 else season_start + 1
     try:
         return date(year, month, day).isoformat()
     except Exception:
@@ -549,8 +358,8 @@ def scrape_wikipedia(data):
     """Scarica tutti i campionati da Wikipedia e aggiorna data."""
     errors, log = [], []
     custom_urls = data.get("urls", {}).get("wikipedia", {})
-    url_b = custom_urls.get("serieB", WIKI_SERIE_B)
-    url_c = custom_urls.get("serieC", WIKI_SERIE_C)
+    url_b = custom_urls.get("serieB", _default_wiki_serie_b())
+    url_c = custom_urls.get("serieC", _default_wiki_serie_c())
     print("📥 Scarico Serie B da Wikipedia...")
     html_b = fetch_page(url_b)
     if html_b is None:
@@ -589,16 +398,15 @@ _LEAGUE_KEYS = ["serieB", "serieCa", "serieCb", "serieCc"]
 
 def get_default_data():
     return {
-        "version":  11,
-        "source":    "wikipedia",
+        "version":   12,
         "updatedAt": date.today().isoformat(),
-        "urls": {},
+        "urls":      {},
         **{k: {
-            "results_by_giornata": {},
+            "results_by_giornata":  {},
             "calendar_by_giornata": {},
-            "results": [],
-            "next_giornata": 0,
-            "next_fixtures": [],
+            "results":              [],
+            "next_giornata":        0,
+            "next_fixtures":        [],
         } for k in _LEAGUE_KEYS},
     }
 
@@ -648,6 +456,15 @@ def load_data():
                 print("  📦 Migrazione → v11 (default source → wikipedia)...")
                 data["source"] = "wikipedia"
                 data["version"] = 11
+                needs_save = True
+            # Migrazione v11 → v12: rimossa fonte calciomagazine.
+            # Pulisco il JSON da chiavi obsolete ("source", urls.calciomagazine).
+            if data.get("version", 0) < 12:
+                print("  📦 Migrazione → v12 (rimossa fonte calciomagazine)...")
+                data.pop("source", None)
+                if isinstance(data.get("urls"), dict):
+                    data["urls"].pop("calciomagazine", None)
+                data["version"] = 12
                 needs_save = True
             if needs_save:
                 save_data(data)
@@ -873,8 +690,7 @@ def api_status():
     ng     = {k: data[k].get("next_giornata",0)    for k in _LEAGUE_KEYS}
     nf     = {k: len(data[k].get("next_fixtures",[])) for k in _LEAGUE_KEYS}
     return jsonify({
-        "updatedAt": data.get("updatedAt","N/A"),
-        "source":    data.get("source","—"),
+        "updatedAt": data.get("updatedAt", "N/A"),
         "total":     sum(counts.values()),
         "counts":    counts,
         "next_giornata":  ng,
@@ -930,32 +746,24 @@ def api_standings():
 
 @app.route("/api/scrape", methods=["POST"])
 def api_scrape():
-    source = request.json.get("source","wikipedia") if request.is_json else "wikipedia"
-    data   = load_data()
-    if data.get("version",0) < 8:
+    data = load_data()
+    if data.get("version", 0) < 8:
         data = get_default_data()
-    data["source"] = source
 
-    if source == "wikipedia":
-        errors, log = scrape_wikipedia(data)
-    else:
-        errors, log = scrape_calciomagazine(data)
-
+    errors, log = scrape_wikipedia(data)
     save_data(data)
 
-    counts = {k: len(data[k].get("results",[])) for k in _LEAGUE_KEYS}
+    counts = {k: len(data[k].get("results", [])) for k in _LEAGUE_KEYS}
     total  = sum(counts.values())
-    src_label = {"wikipedia": "Wikipedia"}.get(source, "calciomagazine.net")
-    msg = f"⚠️ {'; '.join(errors)}" if errors else f"✅ {total} risultati scaricati da {src_label}"
+    msg = f"⚠️ {'; '.join(errors)}" if errors else f"✅ {total} risultati scaricati da Wikipedia"
     return jsonify({
-        "success": len(errors)==0,
-        "source":  source,
+        "success": len(errors) == 0,
         "total":   total,
         "counts":  counts,
-        "next_giornata":  {k: data[k].get("next_giornata",0)       for k in _LEAGUE_KEYS},
-        "next_fixtures":  {k: len(data[k].get("next_fixtures",[]))  for k in _LEAGUE_KEYS},
-        "errors": errors,
-        "log":    log,
+        "next_giornata": {k: data[k].get("next_giornata", 0)      for k in _LEAGUE_KEYS},
+        "next_fixtures": {k: len(data[k].get("next_fixtures", [])) for k in _LEAGUE_KEYS},
+        "errors":  errors,
+        "log":     log,
         "message": msg,
     })
 
@@ -983,24 +791,13 @@ def api_reset():
 @app.route("/api/urls")
 def api_urls_get():
     data = load_data()
-    custom = data.get("urls", {})
-    # Merge defaults con custom per mostrare tutto
-    urls = {
-        "calciomagazine": {},
+    custom = data.get("urls", {}).get("wikipedia", {})
+    return jsonify({
         "wikipedia": {
-            "serieB": custom.get("wikipedia", {}).get("serieB", WIKI_SERIE_B),
-            "serieC": custom.get("wikipedia", {}).get("serieC", WIKI_SERIE_C),
+            "serieB": custom.get("serieB", _default_wiki_serie_b()),
+            "serieC": custom.get("serieC", _default_wiki_serie_c()),
         }
-    }
-    cm_custom = custom.get("calciomagazine", {})
-    for key, cfg in CM_LEAGUES.items():
-        cu = cm_custom.get(key, {})
-        urls["calciomagazine"][key] = {
-            "name": cfg["name"],
-            "results_url":  cu.get("results_url", cfg["results_url"]),
-            "calendar_url": cu.get("calendar_url", cfg["calendar_url"]),
-        }
-    return jsonify(urls)
+    })
 
 
 @app.route("/api/urls", methods=["POST"])
@@ -1043,13 +840,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .status-dot.loading{background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 .status-text{color:var(--text2)}.status-text b{color:var(--accent)}
-
-/* Source buttons */
-.source-bar{display:flex;gap:8px;justify-content:center;margin:10px 0;flex-wrap:wrap}
-.source-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;font-size:.78rem;font-weight:600;transition:all .2s}
-.source-btn.active{background:linear-gradient(135deg,rgba(34,211,238,0.15),rgba(167,139,250,0.15));border-color:var(--accent);color:var(--accent)}
-.source-btn .src-dot{width:6px;height:6px;border-radius:50%;background:var(--border)}
-.source-btn.active .src-dot{background:var(--green);box-shadow:0 0 4px var(--green)}
 
 /* Tabs */
 .tabs{display:flex;gap:6px;justify-content:center;margin:12px 0;flex-wrap:wrap}
@@ -1145,16 +935,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="data-status" id="dataStatus">
 <span class="status-dot empty"></span>
 <span class="status-text">Caricamento...</span>
-</div>
-
-<!-- Source selector -->
-<div class="source-bar">
-  <div class="source-btn" id="srcCM" onclick="setSource('calciomagazine')">
-    <span class="src-dot"></span>calciomagazine.net
-  </div>
-  <div class="source-btn active" id="srcWK" onclick="setSource('wikipedia')">
-    <span class="src-dot"></span>Wikipedia
-  </div>
 </div>
 
 <div style="text-align:center;margin:10px 0">
@@ -1319,8 +1099,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="toast" id="toast"></div>
 
 <script>
-let curSource = 'wikipedia';
-
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 function pc(p){return p>=1.0?'perfect':p>=0.70?'high':p>=0.50?'mid':'low'}
 function pcol(p){return p>=1.0?'#22d3ee':p>=0.70?'#34d399':p>=0.50?'#fbbf24':'#f87171'}
@@ -1375,20 +1153,7 @@ async function updateStatus(){
   const r=await fetch('/api/status');const d=await r.json();
   const dot=d.total>0?'ok':'empty';
   const el=document.getElementById('dataStatus');
-  const ng=d.next_giornata||{};
-  el.innerHTML=`<span class="status-dot ${dot}"></span><span class="status-text">📊 <b>${d.total}</b> risultati · Agg: <b>${d.updatedAt}</b> · Fonte: <b>${d.source||'—'}</b></span>`;
-  // Highlight active source
-  if(d.source){curSource=d.source;
-    document.querySelectorAll('.source-btn').forEach(b=>b.classList.remove('active'));
-    const id=d.source==='wikipedia'?'srcWK':'srcCM';
-    const el2=document.getElementById(id);if(el2)el2.classList.add('active')}
-}
-
-function setSource(s){
-  curSource=s;
-  document.querySelectorAll('.source-btn').forEach(b=>b.classList.remove('active'));
-  const id=s==='wikipedia'?'srcWK':'srcCM';
-  document.getElementById(id).classList.add('active');
+  el.innerHTML=`<span class="status-dot ${dot}"></span><span class="status-text">📊 <b>${d.total}</b> risultati · Agg: <b>${d.updatedAt}</b> · Fonte: <b>Wikipedia</b></span>`;
 }
 
 // ── Scrape ──
@@ -1398,7 +1163,7 @@ async function doScrape(){
   log.classList.add('show');log.innerHTML='Connessione...<br>';
   const dot=document.querySelector('.status-dot');if(dot)dot.className='status-dot loading';
   try{
-    const r=await fetch('/api/scrape',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:curSource})});
+    const r=await fetch('/api/scrape',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
     const d=await r.json();
     log.innerHTML+=d.message+'<br>';
     if(d.log)log.innerHTML+=d.log.map(l=>'  '+l).join('<br>')+'<br>';
@@ -1509,26 +1274,16 @@ function toggleUrls(){const p=document.getElementById('urlsPanel');if(p.style.di
 
 async function loadUrls(){
   const r=await fetch('/api/urls');const d=await r.json();
-  let h='<div class="url-group"><h4>📰 calciomagazine.net</h4>';
-  for(const[key,cfg]of Object.entries(d.calciomagazine)){
-    h+=`<div style="margin-bottom:8px"><div style="font-size:.68rem;color:var(--accent2);margin-bottom:4px;font-weight:600">${cfg.name}</div>`;
-    h+=`<div class="url-row"><label>Risultati</label><input id="url_cm_${key}_res" value="${cfg.results_url}"></div>`;
-    h+=`<div class="url-row"><label>Calendario</label><input id="url_cm_${key}_cal" value="${cfg.calendar_url}"></div></div>`;
-  }
-  h+='</div><div class="url-group"><h4>🌐 Wikipedia</h4>';
+  let h='<div class="url-group"><h4>🌐 Wikipedia</h4>';
   h+=`<div class="url-row"><label>Serie B</label><input id="url_wiki_B" value="${d.wikipedia.serieB}"></div>`;
   h+=`<div class="url-row"><label>Serie C</label><input id="url_wiki_C" value="${d.wikipedia.serieC}"></div>`;
+  h+='<p style="font-size:.68rem;color:var(--text2);margin-top:8px">Se lasciati vuoti, gli URL vengono ricalcolati automaticamente per la stagione in corso.</p>';
   h+='</div>';
   document.getElementById('urlsGrid').innerHTML=h;
 }
 
 async function saveUrls(){
-  const urls={calciomagazine:{},wikipedia:{}};
-  ['serieB','serieCa','serieCb','serieCc'].forEach(k=>{
-    const res=document.getElementById('url_cm_'+k+'_res');
-    const cal=document.getElementById('url_cm_'+k+'_cal');
-    if(res&&cal)urls.calciomagazine[k]={results_url:res.value.trim(),calendar_url:cal.value.trim()};
-  });
+  const urls={wikipedia:{}};
   const wb=document.getElementById('url_wiki_B');
   const wc=document.getElementById('url_wiki_C');
   if(wb)urls.wikipedia.serieB=wb.value.trim();
@@ -1557,12 +1312,11 @@ if __name__ == "__main__":
 
     if not DATA_FILE.exists():
         save_data(get_default_data())
-        print("📂 Primo avvio — seleziona la fonte e premi 🔄 per scaricare i dati")
+        print("📂 Primo avvio — premi 🔄 per scaricare i dati da Wikipedia")
     else:
         d     = load_data()
         total = sum(len(d[k].get("results", [])) for k in _LEAGUE_KEYS)
-        src   = d.get("source", "wikipedia")
-        print(f"📂 Dati caricati: {total} risultati (fonte: {src})")
+        print(f"📂 Dati caricati: {total} risultati (fonte: Wikipedia)")
 
     def run_server():
         import logging
